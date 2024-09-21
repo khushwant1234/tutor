@@ -2,7 +2,6 @@
 import React from "react";
 import Card from "./Card";
 import { courseInfo } from "@/data/FeaturedCourses";
-import Link from "next/link";
 import { TypewriterEffectSmooth } from "../ui/typewriter-effect";
 
 const Featured = () => {

@@ -2,6 +2,7 @@
 import React from "react";
 import Navbar from "@/components/home/Navbar";
 import ContactForm from "@/components/ContactForm";
+import Image from "next/image";
 
 const page = () => {
   return (
@@ -30,10 +31,13 @@ const page = () => {
           </div>
         </div>
         <div className="h-96 w-96 border-0 rounded-xl overflow-hidden mx-1 sm:mx-0 ">
-          <img
+          <Image
             src="/Images/khush.jpg"
             alt="Image"
             className="border-0 rounded-xl"
+            width={384}
+            height={384}
+            layout="responsive"
           />
         </div>
       </div>

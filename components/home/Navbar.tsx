@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -12,9 +13,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
+import Image from "next/image";
 
 const Navbar = () => {
-  const [position, setPosition] = React.useState("bottom");
+  const [position, setPosition] = useState("bottom");
   return (
     <div className="flex justify-between items-center p-5 bg-[#071952] sticky top-0 z-50 ">
       <div className="flex items-center gap-3">
@@ -58,7 +60,12 @@ const Navbar = () => {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost">
-              <img src="/Icons/Bars.svg" alt="Pages" className="h-7 w-7"></img>
+              <Image
+                src="/Icons/Bars.svg"
+                alt="Pages"
+                width={28}
+                height={28}
+              ></Image>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56">
