@@ -3,6 +3,7 @@ import React from "react";
 import Navbar from "@/components/home/Navbar";
 import ContactForm from "@/components/ContactForm";
 import Image from "next/image";
+import Footer from "@/components/footer/Footer";
 
 const page = () => {
   return (
@@ -44,6 +45,7 @@ const page = () => {
       <div className="mt-5">
         <ContactForm></ContactForm>
       </div>
+      <Footer></Footer>
     </div>
   );
 };

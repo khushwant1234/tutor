@@ -2,6 +2,7 @@ import React from "react";
 import Navbar from "@/components/home/Navbar";
 import { Courses } from "@/data/Courses";
 import CourseCard from "@/components/courses/CourseCard";
+import Footer from "@/components/footer/Footer";
 
 const page = () => {
   return (
@@ -16,6 +17,7 @@ const page = () => {
           ></CourseCard>
         ))}
       </div>
+      <Footer></Footer>
     </div>
   );
 };
