@@ -14,7 +14,6 @@ export default function Home() {
         <LoginForm></LoginForm>
       </div> */}
       <ContactForm></ContactForm>
-      <LoginForm></LoginForm>
       <Footer></Footer>
     </div>
   );
