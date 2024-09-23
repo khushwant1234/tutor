@@ -9,6 +9,8 @@ interface FormData {
   message: string;
 }
 
+// Rewrite the logic while making backend
+
 const ContactForm: React.FC = () => {
   const [formData, setFormData] = useState<FormData>({
     name: "",
