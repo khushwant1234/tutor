@@ -2,7 +2,6 @@
 import Navbar from "@/components/home/Navbar";
 import Featured from "@/components/home/Featured";
 import Footer from "@/components/footer/Footer";
-import { LoginForm } from "@/components/LoginForm";
 import ContactForm from "@/components/ContactForm";
 
 export default function Home() {

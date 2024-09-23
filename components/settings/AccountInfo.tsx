@@ -57,6 +57,7 @@ const AccountInfo = () => {
       phone: "",
     });
   };
+
   return (
     <div className="flex justify-center sm:justify-start my-2">
       <Tabs defaultValue="account" className="w-[400px]">
@@ -159,6 +160,12 @@ const AccountInfo = () => {
           </Card>
         </TabsContent>
       </Tabs>
+      {/* Confirmation message after submission */}
+      {submitted && (
+        <div className="mt-4 p-4 bg-green-100 text-green-700 rounded">
+          <p>Form submitted successfully!</p>
+        </div>
+      )}
     </div>
   );
 };
