@@ -141,7 +141,7 @@ const AccountInfo = () => {
                 <Input id="current" type="password" />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="new">New password</Label>
+                <Label htmlFor="new">New password</Label>z
                 <Input id="new" type="password" />
               </div>
             </CardContent>
