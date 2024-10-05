@@ -4,10 +4,12 @@ import Navbar from "@/components/home/Navbar";
 import ContactForm from "@/components/ContactForm";
 import Image from "next/image";
 import Footer from "@/components/footer/Footer";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 
 const page = () => {
   return (
-    <div>
+    <div className="min-h-screen flex flex-col">
       <Navbar></Navbar>
 
       <div className="flex gap-32 flex-wrap sm:flex-nowrap mx-0 sm:mx-5 mt-10 justify-center">
@@ -42,10 +44,19 @@ const page = () => {
           />
         </div>
       </div>
-      <div className="mt-5">
-        <ContactForm></ContactForm>
+      <div className="my-5 flex justify-center">
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline">Contact Us</Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px] p-0 ">
+            <ContactForm className="my-0"></ContactForm>
+          </DialogContent>
+        </Dialog>
       </div>
-      <Footer></Footer>
+      <div className="mt-auto">
+        <Footer></Footer>
+      </div>
     </div>
   );
 };

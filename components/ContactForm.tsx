@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { cn } from "@/lib/utils";
 
 interface FormData {
   name: string;
@@ -9,9 +10,13 @@ interface FormData {
   message: string;
 }
 
+interface ContactFormProps {
+  className: string;
+} // You can directly write {className: string} in place of <ContactFormProps> below
+
 // Rewrite the logic while making backend
 
-const ContactForm: React.FC = () => {
+const ContactForm: React.FC<ContactFormProps> = ({ className }) => {
   const [formData, setFormData] = useState<FormData>({
     name: "",
     class: "",
@@ -61,7 +66,12 @@ const ContactForm: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-lg mx-auto my-8 p-6 bg-white rounded-lg shadow-lg">
+    <div
+      className={cn(
+        "w-full max-w-lg mx-auto my-8 p-6 bg-white sm:rounded-lg sm:shadow-lg",
+        className
+      )}
+    >
       <h2 className="text-2xl font-bold mb-6">Contact Us</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Name */}
