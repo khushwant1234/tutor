@@ -20,7 +20,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 const PagesPhone = () => {
-  const [position, setPosition] = useState("bottom");
+  // const [position, setPosition] = useState("bottom");
   return (
     <div className="sm:hidden flex gap-2">
       {/* <DropdownMenu>
