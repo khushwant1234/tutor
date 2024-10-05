@@ -70,26 +70,28 @@ const PagesPhone = () => {
             height={28}
           ></Image>
         </SheetTrigger>
-        <SheetContent>
+        <SheetContent className="bg-[#071952]">
           <SheetHeader>
-            <SheetTitle className="text-center">Pages</SheetTitle>
+            <SheetTitle className="text-center text-white">Pages</SheetTitle>
           </SheetHeader>
           <div className="">
             <div className="flex flex-col gap-2 mt-2">
               <Link href="/">
-                <Button className="w-full ">Home</Button>
+                <Button className="w-full text-black bg-white">Home</Button>
               </Link>
               <Link href="/Courses">
-                <Button className="w-full ">My Courses</Button>
+                <Button className="w-full text-black bg-white">
+                  My Courses
+                </Button>
               </Link>
               <Link href="/Notes">
-                <Button className="w-full ">Notes</Button>
+                <Button className="w-full text-black bg-white">Notes</Button>
               </Link>
               <Link href="/About">
-                <Button className="w-full ">About Us</Button>
+                <Button className="w-full text-black bg-white">About Us</Button>
               </Link>
               <Link href="/Settings">
-                <Button className="w-full ">Settings</Button>
+                <Button className="w-full text-black bg-white">Settings</Button>
               </Link>
             </div>
             {/* <div className="">
