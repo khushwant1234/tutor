@@ -23,7 +23,7 @@ const PagesPhone = () => {
   const [position, setPosition] = useState("bottom");
   return (
     <div className="sm:hidden flex gap-2">
-      <DropdownMenu>
+      {/* <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost">
             <Image
@@ -60,7 +60,7 @@ const PagesPhone = () => {
             </Link>
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
-      </DropdownMenu>
+      </DropdownMenu> */}
       <Sheet>
         <SheetTrigger asChild>
           <Image
