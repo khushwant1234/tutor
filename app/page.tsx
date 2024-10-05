@@ -12,7 +12,7 @@ export default function Home() {
       {/* <div className="flex justify-center my-5">
         <LoginForm></LoginForm>
       </div> */}
-      <ContactForm></ContactForm>
+      <ContactForm className=""></ContactForm>
       <Footer></Footer>
     </div>
   );
