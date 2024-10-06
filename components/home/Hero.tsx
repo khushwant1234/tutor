@@ -1,10 +1,8 @@
 "use client";
 import React from "react";
-import Card from "./Card";
-import { courseInfo } from "@/data/FeaturedCourses";
 import { TypewriterEffectSmooth } from "../ui/typewriter-effect";
 
-const Featured = () => {
+const Hero = () => {
   const words = [
     {
       text: "Learning",
@@ -74,21 +72,8 @@ const Featured = () => {
           </div>
         </div>
       </section>
-
-      <div className="flex flex-col justify-center items-center">
-        <hr className="border-2 border-black w-full hidden sm:block" />
-        <h2 className="py-5 pt-10 text-6xl font-bold text-center">
-          Featured Courses:
-        </h2>
-        <div className="flex flex-wrap justify-center py-5 pb-10 gap-2">
-          {courseInfo?.map((course, idx) => (
-            <Card key={idx} name={course.title} desc={course.desc}></Card>
-          ))}
-        </div>
-        <hr className="border-2 border-black w-full" />
-      </div>
     </div>
   );
 };
 
-export default Featured;
+export default Hero;

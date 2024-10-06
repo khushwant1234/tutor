@@ -12,11 +12,9 @@ interface FormData {
 
 interface ContactFormProps {
   className: string;
-} // You can directly write {className: string} in place of <ContactFormProps> below
+}
 
-// Rewrite the logic while making backend
-
-const ContactForm: React.FC<ContactFormProps> = ({ className }) => {
+const ContactForm2: React.FC<ContactFormProps> = ({ className }) => {
   const [formData, setFormData] = useState<FormData>({
     name: "",
     class: "",
@@ -29,7 +27,9 @@ const ContactForm: React.FC<ContactFormProps> = ({ className }) => {
   const [submitted, setSubmitted] = useState<boolean>(false);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
   ) => {
     setFormData({
       ...formData,
@@ -39,6 +39,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ className }) => {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
     // Simple form validation
     if (
       !formData.name ||
@@ -55,6 +56,8 @@ const ContactForm: React.FC<ContactFormProps> = ({ className }) => {
     // Submit logic here (e.g., send data to a server)
     setSubmitted(true);
     console.log("Form submitted", formData);
+
+    // Clear the form
     setFormData({
       name: "",
       class: "",
@@ -72,13 +75,13 @@ const ContactForm: React.FC<ContactFormProps> = ({ className }) => {
         className
       )}
     >
-      <h2 className="text-2xl font-bold mb-6">Contact Us</h2>
+      <h2 className="text-2xl font-bold mb-6 text-[#6255C3]">Contact Us</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Name */}
         <div>
           <label
             htmlFor="name"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-sm font-medium text-[#6255C3]"
           >
             Name
           </label>
@@ -88,46 +91,29 @@ const ContactForm: React.FC<ContactFormProps> = ({ className }) => {
             id="name"
             value={formData.name}
             onChange={handleChange}
+            maxLength={50} // Limit to 50 characters
             className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-            placeholder="Enter your name"
+            placeholder="John Doe"
           />
         </div>
 
-        {/* Class */}
+        {/* Email */}
         <div>
           <label
-            htmlFor="class"
-            className="block text-sm font-medium text-gray-700"
+            htmlFor="email"
+            className="block text-sm font-medium text-[#6255C3]"
           >
-            Class
+            Email
           </label>
           <input
-            type="dropdown"
-            name="class"
-            id="class"
-            value={formData.class}
+            type="email"
+            name="email"
+            id="email"
+            value={formData.email}
             onChange={handleChange}
+            maxLength={50} // Limit to 50 characters
             className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-            placeholder="Enter your class"
-          />
-        </div>
-
-        {/* Subject */}
-        <div>
-          <label
-            htmlFor="subject"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Subject
-          </label>
-          <input
-            type="text"
-            name="subject"
-            id="subject"
-            value={formData.subject}
-            onChange={handleChange}
-            className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-            placeholder="Enter subject"
+            placeholder="johndoe@gmail.com"
           />
         </div>
 
@@ -135,7 +121,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ className }) => {
         <div>
           <label
             htmlFor="phone"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-sm font-medium text-[#6255C3]"
           >
             Phone Number
           </label>
@@ -146,45 +132,88 @@ const ContactForm: React.FC<ContactFormProps> = ({ className }) => {
             value={formData.phone}
             onChange={handleChange}
             className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-            placeholder="Enter your phone number"
+            placeholder="+91 XXXXXXXXXX"
           />
         </div>
 
-        {/* Email */}
+        {/* Class Dropdown */}
         <div>
           <label
-            htmlFor="email"
-            className="block text-sm font-medium text-gray-700"
+            htmlFor="class"
+            className="block text-sm font-medium text-[#6255C3]"
           >
-            Email
+            Class
           </label>
-          <input
-            type="email"
-            name="email"
-            id="email"
-            value={formData.email}
+          <select
+            name="class"
+            id="class"
+            value={formData.class}
             onChange={handleChange}
             className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-            placeholder="Enter your email"
-          />
+          >
+            <option value="" disabled>
+              Select your class
+            </option>
+            {[6, 7, 8, 9, 10, 11, 12].map((cls) => (
+              <option key={cls} value={cls}>
+                Class {cls}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Subject Dropdown */}
+        <div>
+          <label
+            htmlFor="subject"
+            className="block text-sm font-medium text-[#6255C3]"
+          >
+            Subject
+          </label>
+          <select
+            name="subject"
+            id="subject"
+            value={formData.subject}
+            onChange={handleChange}
+            className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+          >
+            <option value="" disabled>
+              Select a subject
+            </option>
+            {[
+              "Physics",
+              "Chemistry",
+              "Maths",
+              "Biology",
+              "Social Studies",
+              "English",
+              "Hindi",
+              "Sanskrit",
+              "Computer Science",
+            ].map((subject) => (
+              <option key={subject} value={subject}>
+                {subject}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Message */}
         <div>
           <label
             htmlFor="message"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-sm font-medium text-[#6255C3]"
           >
             Message
           </label>
-          <input
-            type="message"
+          <textarea
             name="message"
             id="message"
             value={formData.message}
             onChange={handleChange}
-            className="mt-1 block w-full border border-gray-300 rounded-md p-2 "
-            placeholder="Enter your message"
+            maxLength={150} // Limit to 150 characters
+            className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+            placeholder="Enter your message (150 characters)"
           />
         </div>
 
@@ -209,4 +238,4 @@ const ContactForm: React.FC<ContactFormProps> = ({ className }) => {
   );
 };
 
-export default ContactForm;
+export default ContactForm2;

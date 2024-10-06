@@ -1,11 +1,11 @@
 "use client";
 import React from "react";
 import Navbar from "@/components/home/Navbar";
-import ContactForm from "@/components/ContactForm";
 import Image from "next/image";
 import Footer from "@/components/footer/Footer";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import ContactForm2 from "@/components/ContactForm2";
 
 const page = () => {
   return (
@@ -47,10 +47,15 @@ const page = () => {
       <div className="my-5 flex justify-center">
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="outline">Contact Us</Button>
+            <Button
+              variant="outline"
+              className="bg-[#7C6EDB] hover:bg-[#6255C3] transition w-full mx-5"
+            >
+              Contact Us
+            </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px] p-0 ">
-            <ContactForm className="my-0"></ContactForm>
+            <ContactForm2 className="my-0"></ContactForm2>
           </DialogContent>
         </Dialog>
       </div>
