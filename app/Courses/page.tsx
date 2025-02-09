@@ -9,11 +9,12 @@ const page = () => {
     <div>
       <Navbar></Navbar>
       <div className="">
-        {Courses?.map((course, idx) => (
+        {Courses?.map((course) => (
           <CourseCard
-            key={idx}
+            key={course.id}
             title={course.title}
             desc={course.description}
+            id={course.id}
           ></CourseCard>
         ))}
       </div>
