@@ -17,7 +17,7 @@ import { Separator } from "@/components/ui/separator";
 export const description =
   "A login form with email and password, plus an option to sign in with Google. The form data is submitted when the 'Sign in' button is clicked.";
 
-export function LoginForm() {
+export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 

@@ -40,6 +40,13 @@ const Pages = () => {
           </Button>
         </Link>
       </div>
+      <div className="text-white hover:text-black">
+        <Link href="/Login">
+          <Button variant="ghost" className="hover:bg-white">
+            <p>Login</p>
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 };
