@@ -1,16 +1,8 @@
+"use client";
 import React from "react";
-// import {
-//   DropdownMenu,
-//   DropdownMenuContent,
-//   DropdownMenuRadioGroup,
-//   DropdownMenuRadioItem,
-//   DropdownMenuSeparator,
-//   DropdownMenuTrigger,
-// } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-// import { useState } from "react";
 import {
   Sheet,
   SheetContent,
@@ -19,48 +11,24 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-const PagesPhone = () => {
-  // const [position, setPosition] = useState("bottom");
+import { useRouter } from 'next/navigation';
+import supabase from "@/utils/supabase/client";
+
+interface PagesPhoneProps {
+  isLoggedIn: boolean;
+  userEmail?: string;
+}
+
+const PagesPhone = ({ isLoggedIn, userEmail }: PagesPhoneProps) => {
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
+
   return (
     <div className="sm:hidden flex gap-2">
-      {/* <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost">
-            <Image
-              src="/Icons/Bars.svg"
-              alt="Pages"
-              width={28}
-              height={28}
-            ></Image>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56">
-          <DropdownMenuSeparator />
-          <DropdownMenuRadioGroup value={position} onValueChange={setPosition}>
-            <Link href="/">
-              <DropdownMenuRadioItem value="home">Home</DropdownMenuRadioItem>
-            </Link>
-            <Link href="/Courses">
-              <DropdownMenuRadioItem value="courses">
-                My Courses
-              </DropdownMenuRadioItem>
-            </Link>
-            <Link href="/Notes">
-              <DropdownMenuRadioItem value="notes">Notes</DropdownMenuRadioItem>
-            </Link>
-            <Link href="/About">
-              <DropdownMenuRadioItem value="about">
-                About Us
-              </DropdownMenuRadioItem>
-            </Link>
-            <Link href="/Settings">
-              <DropdownMenuRadioItem value="settings">
-                Settings
-              </DropdownMenuRadioItem>
-            </Link>
-          </DropdownMenuRadioGroup>
-        </DropdownMenuContent>
-      </DropdownMenu> */}
       <Sheet>
         <SheetTrigger asChild>
           <Image
@@ -74,35 +42,21 @@ const PagesPhone = () => {
           <SheetHeader>
             <SheetTitle className="text-center text-white">Pages</SheetTitle>
           </SheetHeader>
-          <div className="">
-            <div className="flex flex-col gap-2 mt-2">
-              <Link href="/">
-                <Button className="w-full text-black bg-white">Home</Button>
-              </Link>
-              <Link href="/Courses">
-                <Button className="w-full text-black bg-white">
-                  My Courses
+          <div className="flex flex-col gap-4 mt-4">
+            <Link href="/">Home</Link>
+            <Link href="/Courses">Courses</Link>
+            {isLoggedIn ? (
+              <>
+                <span className="text-sm text-gray-600">{userEmail}</span>
+                <Button onClick={handleLogout} variant="outline">
+                  Logout
                 </Button>
+              </>
+            ) : (
+              <Link href="/Login">
+                <Button variant="outline">Login</Button>
               </Link>
-              <Link href="/Notes">
-                <Button className="w-full text-black bg-white">Notes</Button>
-              </Link>
-              <Link href="/About">
-                <Button className="w-full text-black bg-white">About Us</Button>
-              </Link>
-              <Link href="/Settings">
-                <Button className="w-full text-black bg-white">Settings</Button>
-              </Link>
-            </div>
-            {/* <div className="">
-              <SheetClose asChild>
-                <Link href="/">
-                  <Button type="submit" className="w-full">
-                    Logout
-                  </Button>
-                </Link>
-              </SheetClose>
-            </div> */}
+            )}
           </div>
           <SheetFooter></SheetFooter>
         </SheetContent>

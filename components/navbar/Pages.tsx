@@ -1,52 +1,49 @@
+"use client";
 import React from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import supabase from "@/utils/supabase/client";
+import { useRouter } from 'next/navigation';
 
-const Pages = () => {
+interface PagesProps {
+  isLoggedIn: boolean;
+  userEmail?: string;
+}
+
+const Pages = ({ isLoggedIn, userEmail }: PagesProps) => {
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
+
   return (
-    <div className="items-center gap-5 hidden sm:flex">
-      <div className="text-white hover:text-black">
-        <Link href="/">
-          <Button variant="ghost" className="hover:bg-white">
-            <p>Home</p>
+    <div className="hidden sm:flex gap-5 items-center">
+      <Link href="/" className="text-white hover:text-gray-300">
+        Home
+      </Link>
+      <Link href="/Courses" className="text-white hover:text-gray-300">
+        Courses
+      </Link>
+      {isLoggedIn ? (
+        <div className="flex items-center gap-4">
+          <span className="text-white">{userEmail}</span>
+          <Button
+            onClick={handleLogout}
+            variant="outline"
+            className="text-white hover:text-gray-300"
+          >
+            Logout
           </Button>
-        </Link>
-      </div>
-      <div className="text-white hover:text-black">
-        <Link href="/Courses">
-          <Button variant="ghost" className="hover:bg-white">
-            <p>My Courses</p>
-          </Button>
-        </Link>
-      </div>
-      <div className="text-white hover:text-black">
-        <Link href="/Notes">
-          <Button variant="ghost" className="hover:bg-white">
-            <p>Notes</p>
-          </Button>
-        </Link>
-      </div>
-      <div className="text-white hover:text-black">
-        <Link href="/About">
-          <Button variant="ghost" className="hover:bg-white">
-            <p className="">About Us</p>
-          </Button>
-        </Link>
-      </div>
-      <div className="text-white hover:text-black">
-        <Link href="/Settings">
-          <Button variant="ghost" className="hover:bg-white">
-            <p className="">Settings</p>
-          </Button>
-        </Link>
-      </div>
-      <div className="text-white hover:text-black">
+        </div>
+      ) : (
         <Link href="/Login">
-          <Button variant="ghost" className="hover:bg-white">
-            <p>Login</p>
+          <Button variant="outline" className="text-white hover:text-gray-300">
+            Login
           </Button>
         </Link>
-      </div>
+      )}
     </div>
   );
 };

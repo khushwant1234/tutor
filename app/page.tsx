@@ -2,9 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import LoginForm from "./Login/page";
-import { RegisterForm } from './Register/page';
+import RegisterForm from './Register/page';
 import Home from "./Home/page";
+import CheckMail from "./CheckMail/page";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Check } from 'lucide-react';
+import Wrapper from './Wrapper/page';
+import { Courses } from '@/data/Courses';
 
 export default function App() {
   const [data, setData] = useState(null);
@@ -32,6 +36,8 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/Login" element={<LoginForm />} />
         <Route path="/Register" element={<RegisterForm />} />
+        <Route path="/SuccessMail" element={<CheckMail />} />
+        <Route path="/Cources" element={<Courses />} />
       </Routes>
     </BrowserRouter>
   );

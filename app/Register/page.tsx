@@ -14,22 +14,57 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
+import supabase from "@/utils/supabase/client";
+import { useRouter } from 'next/navigation';
 
 export default function RegisterForm() {
+  const router = useRouter();
+  const [success, setSuccess] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError("");
+    setSuccess(false);
+
     if (password !== confirmPassword) {
-      console.error("Passwords do not match");
+      setError("Passwords do not match");
+      setIsLoading(false);
       return;
     }
-    console.log("Form submitted with:", { email, password });
-    setEmail("");
-    setPassword("");
-    setConfirmPassword("");
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: email,
+        password: password,
+      });
+
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
+      // Set success and clear form
+      setSuccess(true);
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
+      
+      // Redirect after 2 seconds
+      setTimeout(() => {
+        router.push('/CheckMail');
+      }, 2000);
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to register');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -43,6 +78,14 @@ export default function RegisterForm() {
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
+            {error && (
+              <div className="text-red-500 text-sm">{error}</div>
+            )}
+            {success && (
+              <div className="text-green-500 text-sm bg-green-50 p-3 rounded-md">
+                Account created successfully! Redirecting to login...
+              </div>
+            )}
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -76,8 +119,12 @@ export default function RegisterForm() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col">
-            <Button type="submit" className="w-full">
-              Register
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={isLoading || success}
+            >
+              {isLoading ? "Registering..." : success ? "Account Created!" : "Register"}
             </Button>
             <div className="mt-2 text-center text-sm">
               Already have an account?{" "}

@@ -14,21 +14,41 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
-
-export const description =
-  "A login form with email and password, plus an option to sign in with Google. The form data is submitted when the 'Sign in' button is clicked.";
+import supabase from "@/utils/supabase/client";
+import { useRouter } from 'next/navigation';
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would typically send the data to your backend
-    console.log("Form submitted with:", { email, password });
-    // Reset form fields after submission
-    setEmail("");
-    setPassword("");
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
+      });
+    
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
+      if (data) {
+        // Successful login
+        router.push('/Home'); // or wherever you want to redirect after login
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to login');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -42,6 +62,11 @@ export default function LoginForm() {
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
+            {error && (
+              <div className="text-red-500 text-sm bg-red-50 p-3 rounded-md">
+                {error}
+              </div>
+            )}
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -65,8 +90,12 @@ export default function LoginForm() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col">
-            <Button type="submit" className="w-full">
-              Sign in
+            <Button 
+              type="submit" 
+              className="w-full"
+              disabled={isLoading}
+            >
+              {isLoading ? "Signing in..." : "Sign in"}
             </Button>
             <div className="mt-2 text-center text-sm">
               No account?{" "}
