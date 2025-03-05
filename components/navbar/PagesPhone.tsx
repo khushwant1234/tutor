@@ -19,7 +19,7 @@ interface PagesPhoneProps {
   userEmail?: string;
 }
 
-const PagesPhone = ({ isLoggedIn, userEmail }: PagesPhoneProps) => {
+const PagesPhone = ({ isLoggedIn }: PagesPhoneProps) => {
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -28,7 +28,7 @@ const PagesPhone = ({ isLoggedIn, userEmail }: PagesPhoneProps) => {
   };
 
   return (
-    <div className="sm:hidden flex gap-2">
+    <div className="sm:hidden">
       <Sheet>
         <SheetTrigger asChild>
           <Image
@@ -40,25 +40,19 @@ const PagesPhone = ({ isLoggedIn, userEmail }: PagesPhoneProps) => {
         </SheetTrigger>
         <SheetContent className="bg-[#071952]">
           <SheetHeader>
-            <SheetTitle className="text-center text-white">Pages</SheetTitle>
+            <SheetTitle className="text-center text-white">Menu</SheetTitle>
           </SheetHeader>
           <div className="flex flex-col gap-4 mt-4">
-            <Link href="/">Home</Link>
-            <Link href="/Courses">Courses</Link>
-            {isLoggedIn ? (
-              <>
-                <span className="text-sm text-gray-600">{userEmail}</span>
-                <Button onClick={handleLogout} variant="outline">
-                  Logout
-                </Button>
-              </>
-            ) : (
+            <Link href="/" className="text-white hover:text-gray-300">Home</Link>
+            <Link href="/Courses" className="text-white hover:text-gray-300">Courses</Link>
+            {!isLoggedIn && (
               <Link href="/Login">
-                <Button variant="outline">Login</Button>
+                <Button variant="outline" className="text-white hover:text-gray-300">
+                  Login
+                </Button>
               </Link>
             )}
           </div>
-          <SheetFooter></SheetFooter>
         </SheetContent>
       </Sheet>
     </div>

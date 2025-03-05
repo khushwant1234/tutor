@@ -26,22 +26,9 @@ const Pages = ({ isLoggedIn, userEmail }: PagesProps) => {
       <Link href="/Courses" className="text-white hover:text-gray-300">
         Courses
       </Link>
-      {isLoggedIn ? (
-        <div className="flex items-center gap-4">
-          <span className="text-white">{userEmail}</span>
-          <Button
-            onClick={handleLogout}
-            variant="outline"
-            className="text-white hover:text-gray-300"
-          >
-            Logout
-          </Button>
-        </div>
-      ) : (
-        <Link href="/Login">
-          <Button variant="outline" className="text-white hover:text-gray-300">
-            Login
-          </Button>
+      {!isLoggedIn && (
+        <Link href="/Login" className="text-white hover:text-gray-300 underline">
+          Login
         </Link>
       )}
     </div>

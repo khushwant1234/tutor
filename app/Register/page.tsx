@@ -23,6 +23,8 @@ export default function RegisterForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [firstName, setFirstName] = useState("");  // Add this
+  const [lastName, setLastName] = useState("");    // Add this
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -42,6 +44,13 @@ export default function RegisterForm() {
       const { data, error } = await supabase.auth.signUp({
         email: email,
         password: password,
+        options: {
+          data: {
+            display_name: `${firstName} ${lastName}`,
+            first_name: firstName,
+            last_name: lastName
+          }
+        }
       });
 
       if (error) {
@@ -54,6 +63,8 @@ export default function RegisterForm() {
       setEmail("");
       setPassword("");
       setConfirmPassword("");
+      setFirstName("");
+      setLastName("");
       
       // Redirect after 2 seconds
       setTimeout(() => {
@@ -79,13 +90,35 @@ export default function RegisterForm() {
           </CardHeader>
           <CardContent className="grid gap-4">
             {error && (
-              <div className="text-red-500 text-sm">{error}</div>
+              <div className="text-red-500 text-sm bg-red-50 p-3 rounded-md">{error}</div>
             )}
             {success && (
               <div className="text-green-500 text-sm bg-green-50 p-3 rounded-md">
-                Account created successfully! Redirecting to login...
+                Account created successfully! Redirecting...
               </div>
             )}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="firstName">First Name</Label>
+                <Input
+                  id="firstName"
+                  type="text"
+                  required
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input
+                  id="lastName"
+                  type="text"
+                  required
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                />
+              </div>
+            </div>
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
