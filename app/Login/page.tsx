@@ -22,6 +22,7 @@ export default function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,12 +43,32 @@ export default function LoginForm() {
 
       if (data) {
         // Successful login
-        router.push('/Home'); // or wherever you want to redirect after login
+        router.push('/Home');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to login');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setIsGoogleLoading(true);
+      setError("");
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google'
+      });
+
+      if (error) {
+        setError(error.message);
+      }
+      
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to sign in with Google');
+    } finally {
+      setIsGoogleLoading(false);
     }
   };
 
@@ -111,7 +132,8 @@ export default function LoginForm() {
               type="button"
               variant="outline"
               className="w-full"
-              onClick={() => console.log("Google sign-in clicked")}
+              onClick={handleGoogleSignIn}
+              disabled={isGoogleLoading}
             >
               <svg
                 className="mr-2 h-4 w-4"
@@ -128,7 +150,7 @@ export default function LoginForm() {
                   d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"
                 ></path>
               </svg>
-              Sign in with Google
+              {isGoogleLoading ? "Signing in..." : "Sign in with Google"}
             </Button>
           </CardFooter>
         </form>

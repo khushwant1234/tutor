@@ -23,10 +23,11 @@ export default function RegisterForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [firstName, setFirstName] = useState("");  // Add this
-  const [lastName, setLastName] = useState("");    // Add this
+  const [firstName, setFirstName] = useState("");  
+  const [lastName, setLastName] = useState("");    
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +59,6 @@ export default function RegisterForm() {
         return;
       }
 
-      // Set success and clear form
       setSuccess(true);
       setEmail("");
       setPassword("");
@@ -66,7 +66,6 @@ export default function RegisterForm() {
       setFirstName("");
       setLastName("");
       
-      // Redirect after 2 seconds
       setTimeout(() => {
         router.push('/CheckMail');
       }, 2000);
@@ -75,6 +74,26 @@ export default function RegisterForm() {
       setError(err instanceof Error ? err.message : 'Failed to register');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignUp = async () => {
+    try {
+      setIsGoogleLoading(true);
+      setError("");
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google'
+      });
+
+      if (error) {
+        setError(error.message);
+      }
+      
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to sign in with Google');
+    } finally {
+      setIsGoogleLoading(false);
     }
   };
 
@@ -173,7 +192,8 @@ export default function RegisterForm() {
               type="button"
               variant="outline"
               className="w-full"
-              onClick={() => console.log("Google sign-up clicked")}
+              onClick={handleGoogleSignUp}
+              disabled={isGoogleLoading || success}
             >
               <svg
                 className="mr-2 h-4 w-4"
@@ -190,7 +210,7 @@ export default function RegisterForm() {
                   d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"
                 ></path>
               </svg>
-              Sign up with Google
+              {isGoogleLoading ? "Signing up..." : "Sign up with Google"}
             </Button>
           </CardFooter>
         </form>

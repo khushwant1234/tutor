@@ -32,6 +32,7 @@ const Navbar = () => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log(session?.user);
       setUser(session?.user ?? null);
     });
 
@@ -76,7 +77,7 @@ const Navbar = () => {
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{user?.user_metadata?.display_name}</p>
+                  <p className="text-sm font-medium leading-none">{user?.user_metadata?.display_name || user?.user_metadata?.full_name}</p>
                   <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
                 </div>
               </DropdownMenuLabel>
