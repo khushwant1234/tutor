@@ -1,29 +1,82 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Navbar from "@/components/home/Navbar";
-import { Courses } from "@/data/Courses";
 import CourseCard from "@/components/courses/CourseCard";
 import Footer from "@/components/footer/Footer";
+import supabase from "@/utils/supabase/client";
+import { Loader2 } from "lucide-react";
+
+interface Course {
+  id: string;
+  title: string;
+  description: string;
+  image_url?: string;
+  instructor?: string;
+}
 
 const CoursesPage = () => {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function fetchCourses() {
+      try {
+        setLoading(true);
+        
+        // Fetch all courses from the database
+        const { data, error } = await supabase
+          .from('courses')
+          .select('*');
+          
+        if (error) throw error;
+        
+        setCourses(data || []);
+      } catch (err) {
+        console.error("Error fetching courses:", err);
+        setError("Failed to load courses");
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchCourses();
+  }, []);
+
   return (
-    <div>
+    <div className="flex flex-col min-h-screen">
       <Navbar />
-      <div className="container mx-auto py-8 px-4">
+      <div className="container mx-auto py-8 px-4 flex-grow">
         <h1 className="text-3xl font-bold mb-6">Available Courses</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Courses?.map((course) => (
-            <CourseCard
-              key={course.id}
-              title={course.title}
-              desc={course.description}
-              id={course.id}
-              image={course.image_url}
-              instructor={course.instructor}
-            />
-          ))}
-        </div>
+        
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+          </div>
+        ) : error ? (
+          <div className="bg-red-50 p-4 rounded-md text-red-500 text-center">
+            {error}
+          </div>
+        ) : courses.length === 0 ? (
+          <div className="bg-gray-50 p-8 rounded-lg text-center">
+            <h3 className="text-xl font-medium text-gray-700">No courses available</h3>
+            <p className="mt-2 text-gray-500">Check back later for new courses.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {courses.map((course) => (
+              <CourseCard
+                key={course.id}
+                title={course.title}
+                desc={course.description}
+                id={course.id}
+                image_url={course.image_url}
+                instructor={course.instructor}
+              />
+            ))}
+          </div>
+        )}
       </div>
       <Footer />
     </div>

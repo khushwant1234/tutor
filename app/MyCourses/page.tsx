@@ -66,9 +66,11 @@ const MyCourses = () => {
   }, []);
 
   return (
-    <div>
+    // Add flex and min-h-screen to make the page take at least the full viewport height
+    <div className="flex flex-col min-h-screen">
       <Navbar />
-      <div className="container mx-auto py-8">
+      {/* Add flex-grow to push the footer down */}
+      <div className="container mx-auto py-8 flex-grow">
         <h1 className="text-3xl font-bold mb-6">My Courses</h1>
         
         {loading ? (
@@ -94,6 +96,7 @@ const MyCourses = () => {
                 id={course.id}
                 image_url={course.image_url || ""}
                 instructor={course.instructor || ""}
+                hideEnroll={true} // Add this prop
               />
             ))}
           </div>
