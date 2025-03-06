@@ -24,8 +24,14 @@ const Pages = ({ isLoggedIn, userEmail }: PagesProps) => {
         Home
       </Link>
       <Link href="/Courses" className="text-white hover:text-gray-300">
-        Courses
+        Explore Courses
       </Link>
+      {isLoggedIn && (
+        <Link href="/MyCourses" className="text-white hover:text-gray-300">
+        My Courses
+      </Link>
+      )}
+      
       {!isLoggedIn && (
         <Link href="/Login" className="text-white hover:text-gray-300 underline">
           Login

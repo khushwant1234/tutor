@@ -23,7 +23,6 @@ const AdminPage = () => {
   const [description, setDescription] = useState("");
   const [imageUrl, setImageUrl] = useState("https://placehold.co/600x400");
   const [instructor, setInstructor] = useState("");
-  const [courseId, setCourseId] = useState("");
   
   // Admin user form state
   const [adminEmail, setAdminEmail] = useState("");
@@ -111,8 +110,8 @@ const AdminPage = () => {
     
     try {
       // Validate form
-      if (!title || !description || !instructor || !courseId) {
-        setError("All fields are required except image URL");
+      if (!title || !description || !instructor) {
+        setError("Title, description and instructor are required");
         return;
       }
       
@@ -121,7 +120,6 @@ const AdminPage = () => {
         .from('courses')
         .insert([
           {
-            id: courseId,
             title,
             description,
             image_url: imageUrl,
@@ -140,7 +138,6 @@ const AdminPage = () => {
       setDescription("");
       setImageUrl("https://placehold.co/600x400");
       setInstructor("");
-      setCourseId("");
       
     } catch (err: any) {
       console.error("Error adding course:", err);
@@ -344,7 +341,7 @@ const AdminPage = () => {
         .eq('user_id', userId)
         .eq('role', 'admin')
         .single();
-        
+
       if (roleError) {
         console.error("Error getting role ID:", roleError);
         setRevokeError("Error finding admin role to delete");
@@ -442,16 +439,6 @@ const AdminPage = () => {
             
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="courseId">Course ID</Label>
-                  <Input 
-                    id="courseId"
-                    placeholder="e.g. DS1, FSWD1"
-                    value={courseId}
-                    onChange={(e) => setCourseId(e.target.value)}
-                  />
-                </div>
-                
                 <div>
                   <Label htmlFor="title">Course Title</Label>
                   <Input 
