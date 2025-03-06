@@ -14,17 +14,23 @@ interface CourseCardProps {
   hideEnroll?: boolean; // Used for MyCourses page where we don't need enroll button
 }
 
+// Define proper user type to fix ESLint error
+interface UserData {
+  id: string;
+  email?: string;
+}
+
 const CourseCard = ({ id, title, desc, image_url, instructor, hideEnroll = false }: CourseCardProps) => {
   const [enrolling, setEnrolling] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserData | null>(null);
 
   useEffect(() => {
     // Check if user is already enrolled in this course
     const checkEnrollment = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        setUser(user);
+        setUser(user as UserData);
         
         if (!user) return;
 
@@ -69,16 +75,17 @@ const CourseCard = ({ id, title, desc, image_url, instructor, hideEnroll = false
       // Update state to show enrolled
       setIsEnrolled(true);
       
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error enrolling in course:", err);
-      alert(err.message || "Failed to enroll in course");
+      alert(err instanceof Error ? err.message : "Failed to enroll in course");
     } finally {
       setEnrolling(false);
     }
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+    // Add h-full to make the card take full height of its container
+    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full">
       {image_url ? (
         <div className="relative h-48 w-full">
           <Image 
@@ -95,17 +102,22 @@ const CourseCard = ({ id, title, desc, image_url, instructor, hideEnroll = false
         </div>
       )}
       
-      <div className="p-5">
-        <h3 className="text-xl font-semibold mb-2">{title}</h3>
-        <p className="text-gray-600 mb-4">{desc}</p>
+      {/* Add flex-col and flex-grow to make the content section expand */}
+      <div className="p-5 flex flex-col flex-grow">
+        {/* This div will expand to fill available space */}
+        <div className="flex-grow">
+          <h3 className="text-xl font-semibold mb-2">{title}</h3>
+          <p className="text-gray-600 mb-4">{desc}</p>
+          
+          {instructor && (
+            <p className="text-sm text-gray-500 mb-4">
+              Instructor: {instructor}
+            </p>
+          )}
+        </div>
         
-        {instructor && (
-          <p className="text-sm text-gray-500 mb-4">
-            Instructor: {instructor}
-          </p>
-        )}
-        
-        <div className="flex justify-between items-center">
+        {/* Add mt-auto to push this div to the bottom */}
+        <div className="flex justify-between items-center mt-auto pt-4">
           <Link href={`/course/${id}`}>
             <Button variant="outline">Learn More</Button>
           </Link>
