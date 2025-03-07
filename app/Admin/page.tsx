@@ -74,7 +74,7 @@ const AdminPage = () => {
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     const setup = async () => {
       // Initialize database tables first
       await initializeDatabase();
@@ -406,12 +406,41 @@ const AdminPage = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  // For multi-class days
+  // For multi-class days – keep these declarations only once
   const [timeSlots, setTimeSlots] = useState<{day: number, time: string}[]>([]);
+  const [selectedDay, setSelectedDay] = useState<number | undefined>(undefined);
+  const [selectedTime, setSelectedTime] = useState("");
+  const [availableDays, setAvailableDays] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
 
   // Function to add a new time slot
   const addTimeSlot = (day: number, time: string) => {
+    // Check if we already have this exact time slot
+    const isDuplicate = timeSlots.some(slot => slot.day === day && slot.time === time);
+    
+    if (isDuplicate) {
+      alert("This time slot already exists");
+      return;
+    }
+    
+    // Add the new time slot
     setTimeSlots([...timeSlots, {day, time}]);
+    
+    // Reset inputs
+    setSelectedTime("");
+    setSelectedDay(undefined);
+  };
+
+  // Also update the function that removes a time slot
+  const removeTimeSlot = (index: number) => {
+    const slotToRemove = timeSlots[index];
+    const updatedSlots = timeSlots.filter((_, i) => i !== index);
+    setTimeSlots(updatedSlots);
+    
+    // Check if we need to restore the day to available days
+    const dayIsStillUsed = updatedSlots.some(slot => slot.day === slotToRemove.day);
+    if (!dayIsStillUsed && !availableDays.includes(slotToRemove.day)) {
+      setAvailableDays([...availableDays, slotToRemove.day].sort((a, b) => a - b));
+    }
   };
 
   // Function to schedule a one-time class
@@ -646,10 +675,163 @@ const AdminPage = () => {
   }, []);
 
   // Add these state variables for the tab content
-  const [selectedDay, setSelectedDay] = useState<number | undefined>(undefined);
-  const [selectedTime, setSelectedTime] = useState("");
   const [classSchedulingError, setClassSchedulingError] = useState("");
   const [classSchedulingSuccess, setClassSchedulingSuccess] = useState(false);
+
+  // Add these state variables to the AdminPage component
+  const [classesForCourse, setClassesForCourse] = useState<any[]>([]);
+  const [manageCourseId, setManageCourseId] = useState("");
+  const [loadingClasses, setLoadingClasses] = useState(false);
+  const [selectedClassId, setSelectedClassId] = useState("");
+  const [editClassLink, setEditClassLink] = useState("");
+  const [editingClass, setEditingClass] = useState(false);
+  const [editClassError, setEditClassError] = useState("");
+  const [editClassSuccess, setEditClassSuccess] = useState(false);
+
+  // Add this function to the AdminPage component
+  const fetchClassesForCourse = async (courseId: string) => {
+    try {
+      setLoadingClasses(true);
+      setClassesForCourse([]);
+      
+      // First fetch all course_classes for this course
+      const { data: classData, error: classError } = await supabase
+        .from('course_classes')
+        .select('*')
+        .eq('course_id', courseId)
+        .order('start_time', { ascending: true });
+        
+      if (classError) throw classError;
+      
+      if (!classData || classData.length === 0) {
+        setClassesForCourse([]);
+        return;
+      }
+      
+      // Then fetch instances for all these classes
+      const classIds = classData.map(c => c.id);
+      
+      const { data: instanceData, error: instanceError } = await supabase
+        .from('class_instances')
+        .select('*')
+        .in('class_id', classIds)
+        .order('start_time', { ascending: true });
+        
+      if (instanceError) throw instanceError;
+      
+      // Combine the data
+      const combinedData = instanceData?.map(instance => {
+        const parentClass = classData.find(c => c.id === instance.class_id);
+        return {
+          ...instance,
+          course_id: parentClass?.course_id,
+          recurring: parentClass?.recurring,
+          parent_title: parentClass?.title
+        };
+      }) || [];
+      
+      setClassesForCourse(combinedData);
+    } catch (err) {
+      console.error("Error fetching classes:", err);
+    } finally {
+      setLoadingClasses(false);
+    }
+  };
+
+  // Add this function to update meeting links
+  const updateClassMeetingLink = async (classId: string, meetingLink: string) => {
+    try {
+      setEditingClass(true);
+      setEditClassError("");
+      setEditClassSuccess(false);
+      
+      const { error } = await supabase
+        .from('class_instances')
+        .update({ meeting_link: meetingLink })
+        .eq('id', classId);
+        
+      if (error) throw error;
+      
+      // Update the local state
+      setClassesForCourse(classes => 
+        classes.map(c => c.id === classId ? { ...c, meeting_link: meetingLink } : c)
+      );
+      
+      setEditClassSuccess(true);
+      setEditClassLink("");
+      setSelectedClassId("");
+    } catch (err) {
+      console.error("Error updating class link:", err);
+      setEditClassError(err instanceof Error ? err.message : "Failed to update meeting link");
+    } finally {
+      setEditingClass(false);
+    }
+  };
+
+  // Add these state variables to AdminPage component
+  const [bulkUpdateModalOpen, setBulkUpdateModalOpen] = useState(false);
+  const [bulkUpdateClassId, setBulkUpdateClassId] = useState("");
+  const [bulkUpdateParentTitle, setBulkUpdateParentTitle] = useState("");
+  const [bulkUpdateLink, setBulkUpdateLink] = useState("");
+  const [bulkUpdating, setBulkUpdating] = useState(false);
+
+  // Add this function to bulk update meeting links
+  const bulkUpdateMeetingLinks = async () => {
+    try {
+      setBulkUpdating(true);
+      setEditClassError("");
+      
+      // Update all instances with the same parent class_id
+      const { error } = await supabase
+        .from('class_instances')
+        .update({ meeting_link: bulkUpdateLink })
+        .eq('class_id', bulkUpdateClassId);
+        
+      if (error) throw error;
+      
+      // Update the local state
+      setClassesForCourse(classes => 
+        classes.map(c => c.class_id === bulkUpdateClassId ? { ...c, meeting_link: bulkUpdateLink } : c)
+      );
+      
+      setEditClassSuccess(true);
+      setBulkUpdateModalOpen(false);
+      
+      // Refresh the class list to show updated links
+      if (manageCourseId) {
+        fetchClassesForCourse(manageCourseId);
+      }
+    } catch (err) {
+      console.error("Error bulk updating meeting links:", err);
+      setEditClassError(err instanceof Error ? err.message : "Failed to update meeting links");
+    } finally {
+      setBulkUpdating(false);
+    }
+  };
+
+  // Helper functions
+  const groupTimeSlotsByDay = (slots: {day: number, time: string}[]) => {
+    const groups: Record<number, {day: number, times: string[]}> = {};
+    
+    slots.forEach(slot => {
+      if (!groups[slot.day]) {
+        groups[slot.day] = {
+          day: slot.day,
+          times: []
+        };
+      }
+      
+      groups[slot.day].times.push(slot.time);
+    });
+    
+    // Sort each day's times
+    Object.values(groups).forEach(group => {
+      group.times.sort();
+    });
+    
+    // Return as array sorted by day
+    return Object.values(groups).sort((a, b) => a.day - b.day);
+  };
 
   // Loading state while checking admin status
   if (adminCheckLoading) {
@@ -689,6 +871,7 @@ const AdminPage = () => {
     );
   }
   
+
   return (
     <div>
       <Navbar />
@@ -895,7 +1078,7 @@ const AdminPage = () => {
           </CardContent>
         </Card>
         
-        <Card className="mb-8">
+        <Card className="mb-8" id="scheduleSection">
           <CardHeader>
             <CardTitle>Schedule Classes</CardTitle>
             <CardDescription>
@@ -1093,10 +1276,19 @@ const AdminPage = () => {
                     </div>
                   </div>
                   
-                  {/* Time slots section for multiple times per day */}
+                  {/* Replace your existing time slots section with this */}
                   <div>
                     <Label>Class Times</Label>
+                    <p className="text-sm text-gray-500 mb-2">
+                      Add class times for the days you selected above: {
+                        recurringDays.map(day => 
+                          ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][day]
+                        ).join(', ')
+                      }
+                    </p>
+                    
                     <div className="mt-2 space-y-3">
+                      {/* Display existing time slots */}
                       {timeSlots.map((slot, idx) => (
                         <div key={idx} className="flex items-center gap-2">
                           <div className="bg-slate-100 px-3 py-2 rounded-md flex-1">
@@ -1106,46 +1298,84 @@ const AdminPage = () => {
                             type="button" 
                             variant="ghost" 
                             size="sm"
-                            onClick={() => setTimeSlots(timeSlots.filter((_, i) => i !== idx))}
+                            onClick={() => removeTimeSlot(idx)}
                           >
                             <X size={16} />
                           </Button>
                         </div>
                       ))}
                       
-                      {/* Add time slot form */}
-                      <div className="grid grid-cols-3 gap-2 mt-2">
-                        <Select onValueChange={(val) => setSelectedDay(parseInt(val))}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Day" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day, idx) => (
-                              <SelectItem key={idx} value={idx.toString()}>{day}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        
-                        <Input 
-                          type="time"
-                          value={selectedTime}
-                          onChange={(e) => setSelectedTime(e.target.value)}
-                        />
-                        
-                        <Button 
-                          type="button"
-                          onClick={() => {
-                            if (selectedDay !== undefined && selectedTime) {
-                              addTimeSlot(selectedDay, selectedTime);
-                              setSelectedTime("");
-                            }
-                          }}
-                          disabled={selectedDay === undefined || !selectedTime}
-                        >
-                          Add Time
-                        </Button>
-                      </div>
+                      {/* Only show the add time form if there are recurring days selected */}
+                      {recurringDays.length > 0 && (
+                        <div className="grid grid-cols-3 gap-2 mt-2">
+                          <Select 
+                            onValueChange={(val) => setSelectedDay(parseInt(val))}
+                            value={selectedDay?.toString() || ""}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select day" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {/* Only show days that are in recurringDays */}
+                              {recurringDays
+                                .filter(dayIndex => {
+                                  // To prevent duplicate time slots, check if this day+time combo exists
+                                  if (selectedTime) {
+                                    return !timeSlots.some(slot => 
+                                      slot.day === dayIndex && slot.time === selectedTime
+                                    );
+                                  }
+                                  return true;
+                                })
+                                .map((dayIndex) => (
+                                  <SelectItem key={dayIndex} value={dayIndex.toString()}>
+                                    {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayIndex]}
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                          
+                          <Input 
+                            type="time"
+                            value={selectedTime}
+                            onChange={(e) => setSelectedTime(e.target.value)}
+                            placeholder="Select time"
+                          />
+                          
+                          <Button 
+                            type="button"
+                            onClick={() => {
+                              if (selectedDay !== undefined && selectedTime) {
+                                addTimeSlot(selectedDay, selectedTime);
+                              }
+                            }}
+                            disabled={selectedDay === undefined || !selectedTime}
+                          >
+                            Add Time
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {/* Show message if no days are selected */}
+                      {recurringDays.length === 0 && (
+                        <div className="p-4 bg-gray-50 rounded-md text-center text-gray-500">
+                          Please select days of the week above before adding class times.
+                        </div>
+                      )}
                     </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="meetingLinkRecurring">Default Meeting Link</Label>
+                    <Input 
+                      id="meetingLinkRecurring"
+                      placeholder="https://zoom.us/j/..."
+                      value={meetingLink}
+                      onChange={(e) => setMeetingLink(e.target.value)}
+                    />
+                    <p className="text-sm text-gray-500 mt-1">
+                      This link will be used for all classes in this schedule unless overridden individually.
+                    </p>
                   </div>
                   
                   <Button type="submit" className="w-full mt-6">
@@ -1157,9 +1387,323 @@ const AdminPage = () => {
           </CardContent>
         </Card>
         
+        {/* Add this card after your Schedule Classes card */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Manage Class Links</CardTitle>
+            <CardDescription>
+              Update meeting links for existing classes
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {editClassError && (
+              <div className="bg-red-50 p-4 mb-6 rounded-md flex items-start">
+                <AlertCircle className="text-red-500 mr-2 h-5 w-5 mt-0.5" />
+                <span className="text-red-600">{editClassError}</span>
+              </div>
+            )}
+            
+            {editClassSuccess && (
+              <div className="bg-green-50 p-4 mb-6 rounded-md flex items-start">
+                <CheckCircle2 className="text-green-500 mr-2 h-5 w-5 mt-0.5" />
+                <span className="text-green-600">Meeting link updated successfully!</span>
+              </div>
+            )}
+            
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="manageCourse">Select Course</Label>
+                <Select 
+                  value={manageCourseId} 
+                  onValueChange={(val) => {
+                    setManageCourseId(val);
+                    fetchClassesForCourse(val);
+                  }}
+                >
+                  <SelectTrigger id="manageCourse">
+                    <SelectValue placeholder="Select a course" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {courses.map(course => (
+                      <SelectItem key={course.id} value={course.id}>
+                        {course.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {loadingClasses && (
+                <div className="py-8 text-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-gray-500 mx-auto" />
+                  <p className="mt-2 text-gray-500">Loading classes...</p>
+                </div>
+              )}
+              
+              {!loadingClasses && classesForCourse.length === 0 && manageCourseId && (
+                <div className="py-8 text-center">
+                  <p className="text-gray-500">No classes found for this course.</p>
+                  <Button 
+                    variant="outline" 
+                    className="mt-4"
+                    onClick={() => {
+                      setScheduleType("one-time");
+                      setSelectedCourseId(manageCourseId);
+                      // Scroll to the schedule section
+                      document.querySelector('#scheduleSection')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                  >
+                    Create a Class
+                  </Button>
+                </div>
+              )}
+              
+              {!loadingClasses && classesForCourse.length > 0 && (
+                <div className="border rounded-md overflow-hidden">
+                  {/* Add this above the class listing table, inside the Card */}
+                  <div className="mb-4">
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        // Group classes by parent class_id to show recurring classes
+                        const parentClasses = classesForCourse.reduce((acc, cls) => {
+                          if (cls.recurring) {
+                            if (!acc[cls.class_id]) {
+                              acc[cls.class_id] = {
+                                id: cls.class_id,
+                                title: cls.parent_title || cls.title,
+                                count: 1
+                              };
+                            } else {
+                              acc[cls.class_id].count++;
+                            }
+                          }
+                          return acc;
+                        }, {});
+                        
+                        // If there are recurring classes, show a modal to select which one to bulk update
+                        const recurringClasses = Object.values(parentClasses);
+                        
+                        if (recurringClasses.length === 0) {
+                          alert("No recurring classes found for this course.");
+                          return;
+                        }
+                        
+                        // Show a dialog to select which recurring class series to update
+                        const select = document.createElement('select');
+                        select.id = 'recurringClassSelect';
+                        select.className = 'p-2 border rounded w-full mb-4';
+                        
+                        recurringClasses.forEach((cls: any) => {
+                          const option = document.createElement('option');
+                          option.value = cls.id;
+                          option.textContent = `${cls.title} (${cls.count} classes)`;
+                          select.appendChild(option);
+                        });
+                        
+                        const dialog = document.createElement('div');
+                        dialog.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
+                        
+                        const content = document.createElement('div');
+                        content.className = 'bg-white rounded-lg p-6 max-w-md w-full mx-4';
+                        content.innerHTML = `
+                          <h3 class="text-lg font-medium mb-2">Select Recurring Class Series</h3>
+                          <p class="text-sm text-gray-500 mb-4">Choose a recurring class series to update all meeting links at once.</p>
+                        `;
+                        
+                        content.appendChild(select);
+                        
+                        const buttonContainer = document.createElement('div');
+                        buttonContainer.className = 'flex justify-end space-x-2 mt-4';
+                        
+                        const cancelButton = document.createElement('button');
+                        cancelButton.className = 'px-4 py-2 border rounded text-gray-700 bg-white hover:bg-gray-50';
+                        cancelButton.textContent = 'Cancel';
+                        cancelButton.onclick = () => document.body.removeChild(dialog);
+                        
+                        const confirmButton = document.createElement('button');
+                        confirmButton.className = 'px-4 py-2 rounded text-white bg-blue-600 hover:bg-blue-700';
+                        confirmButton.textContent = 'Continue';
+                        confirmButton.onclick = () => {
+                          const selectedClassId = select.value;
+                          const selectedClass = recurringClasses.find((c: any) => c.id === selectedClassId);
+                          
+                          if (selectedClass) {
+                            setBulkUpdateClassId(selectedClassId);
+                            setBulkUpdateParentTitle(selectedClass.title);
+                            setBulkUpdateLink("");
+                            setBulkUpdateModalOpen(true);
+                          }
+                          
+                          document.body.removeChild(dialog);
+                        };
+                        
+                        buttonContainer.appendChild(cancelButton);
+                        buttonContainer.appendChild(confirmButton);
+                        content.appendChild(buttonContainer);
+                        
+                        dialog.appendChild(content);
+                        document.body.appendChild(dialog);
+                        
+                        // Make the dialog dismissable by clicking outside
+                        dialog.onclick = (e) => {
+                          if (e.target === dialog) {
+                            document.body.removeChild(dialog);
+                          }
+                        };
+                      }}
+                    >
+                      Bulk Update Recurring Classes
+                    </Button>
+                  </div>
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Class
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Date & Time
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Meeting Link
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {classesForCourse.map((cls) => {
+                        const startDate = new Date(cls.start_time);
+                        const formattedDate = startDate.toLocaleDateString();
+                        const formattedTime = startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        
+                        return (
+                          <tr key={cls.id} className={cls.id === selectedClassId ? "bg-blue-50" : ""}>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm font-medium text-gray-900">{cls.title}</div>
+                              {cls.recurring && (
+                                <div className="text-xs text-gray-500">
+                                  Recurring
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{formattedDate}</div>
+                              <div className="text-xs text-gray-500">{formattedTime}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {selectedClassId === cls.id ? (
+                                <div className="flex items-center space-x-2">
+                                  <Input
+                                    value={editClassLink}
+                                    onChange={(e) => setEditClassLink(e.target.value)}
+                                    placeholder="https://zoom.us/j/..."
+                                    className="text-sm"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="text-sm text-gray-900 truncate max-w-xs">
+                                  {cls.meeting_link || "No link set"}
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              {selectedClassId === cls.id ? (
+                                <div className="flex justify-end space-x-2">
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost"
+                                    onClick={() => {
+                                      setSelectedClassId("");
+                                      setEditClassLink("");
+                                    }}
+                                  >
+                                    Cancel
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    disabled={editingClass}
+                                    onClick={() => updateClassMeetingLink(cls.id, editClassLink)}
+                                  >
+                                    {editingClass ? (
+                                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
+                                    ) : (
+                                      'Save'
+                                    )}
+                                  </Button>
+                                </div>
+                              ) : (
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => {
+                                    setSelectedClassId(cls.id);
+                                    setEditClassLink(cls.meeting_link || "");
+                                  }}
+                                >
+                                  Edit Link
+                                </Button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        
         {/* You can add other admin functionality here */}
       </div>
       <Footer />
+      {/* Add this at the end of your component return, before the closing div */}
+      {bulkUpdateModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4" onClick={e => e.stopPropagation()}>
+            <h2 className="text-xl font-semibold mb-2">Update All Meeting Links</h2>
+            <p className="text-gray-500 mb-4">
+              This will update the meeting link for all classes in "{bulkUpdateParentTitle}".
+            </p>
+            
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="bulkUpdateLink">Meeting Link</Label>
+                <Input
+                  id="bulkUpdateLink"
+                  value={bulkUpdateLink}
+                  onChange={(e) => setBulkUpdateLink(e.target.value)}
+                  placeholder="https://zoom.us/j/..."
+                />
+              </div>
+              
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setBulkUpdateModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                
+                <Button
+                  onClick={bulkUpdateMeetingLinks}
+                  disabled={bulkUpdating}
+                >
+                  {bulkUpdating ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Updating...</>
+                  ) : (
+                    'Update All Links'
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

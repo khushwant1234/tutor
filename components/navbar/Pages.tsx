@@ -4,13 +4,15 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import supabase from "@/utils/supabase/client";
 import { useRouter } from 'next/navigation';
+import { ShieldCheck } from "lucide-react"; // Import ShieldCheck icon
 
 interface PagesProps {
   isLoggedIn: boolean;
+  isAdmin?: boolean; // Add isAdmin property
   userEmail?: string;
 }
 
-const Pages = ({ isLoggedIn, userEmail }: PagesProps) => {
+const Pages = ({ isLoggedIn, isAdmin, userEmail }: PagesProps) => {
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -25,8 +27,15 @@ const Pages = ({ isLoggedIn, userEmail }: PagesProps) => {
       </Link>
       {isLoggedIn && (
         <Link href="/Dashboard" className="text-white hover:text-gray-300">
-        Dashboard
-      </Link>
+          Dashboard
+        </Link>
+      )}
+      {/* Add Admin link that only shows up for admin users */}
+      {isLoggedIn && isAdmin && (
+        <Link href="/Admin" className="text-white hover:text-gray-300 flex items-center">
+          <ShieldCheck className="mr-1 h-4 w-4" />
+          Admin
+        </Link>
       )}
       <Link href="/Courses" className="text-white hover:text-gray-300">
         Explore Courses

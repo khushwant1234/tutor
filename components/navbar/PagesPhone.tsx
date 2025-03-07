@@ -1,60 +1,78 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { useRouter } from 'next/navigation';
 import supabase from "@/utils/supabase/client";
+import { useRouter } from 'next/navigation';
+import { Menu, X, ShieldCheck } from "lucide-react"; // Import ShieldCheck icon
 
 interface PagesPhoneProps {
   isLoggedIn: boolean;
+  isAdmin?: boolean; // Add isAdmin property
   userEmail?: string;
 }
 
-const PagesPhone = ({ isLoggedIn }: PagesPhoneProps) => {
+const PagesPhone = ({ isLoggedIn, isAdmin, userEmail }: PagesPhoneProps) => {
   const router = useRouter();
+  const [isOpen, setIsOpen] = useState(false);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.push('/login');
+    router.push('/Login');
+    setIsOpen(false);
+  };
+
+  const toggleMenu = () => {
+    setIsOpen(!isOpen);
   };
 
   return (
     <div className="sm:hidden">
-      <Sheet>
-        <SheetTrigger asChild>
-          <Image
-            src="/Icons/Bars.svg"
-            alt="Pages"
-            width={28}
-            height={28}
-          ></Image>
-        </SheetTrigger>
-        <SheetContent className="bg-[#071952]">
-          <SheetHeader>
-            <SheetTitle className="text-center text-white">Menu</SheetTitle>
-          </SheetHeader>
-          <div className="flex flex-col gap-4 mt-4">
-            <Link href="/" className="text-white hover:text-gray-300">Home</Link>
-            <Link href="/Courses" className="text-white hover:text-gray-300">Courses</Link>
-            {!isLoggedIn && (
-              <Link href="/Login">
-                <Button variant="outline" className="text-white hover:text-gray-300">
-                  Login
-                </Button>
+      <Button variant="ghost" onClick={toggleMenu}>
+        {isOpen ? <X /> : <Menu />}
+      </Button>
+
+      {isOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50" onClick={toggleMenu}>
+          <div className="absolute right-0 top-0 h-screen w-64 bg-white shadow-lg" 
+               onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-end p-4">
+              <Button variant="ghost" onClick={toggleMenu}>
+                <X />
+              </Button>
+            </div>
+            <div className="flex flex-col p-4 space-y-4">
+              <Link href="/" onClick={toggleMenu} className="p-2 hover:bg-gray-100 rounded">
+                Home
               </Link>
-            )}
+              {isLoggedIn && (
+                <Link href="/Dashboard" onClick={toggleMenu} className="p-2 hover:bg-gray-100 rounded">
+                  Dashboard
+                </Link>
+              )}
+              {/* Add Admin link that only shows for admin users */}
+              {isLoggedIn && isAdmin && (
+                <Link href="/Admin" onClick={toggleMenu} className="p-2 hover:bg-gray-100 rounded flex items-center">
+                  <ShieldCheck className="mr-2 h-4 w-4" />
+                  Admin
+                </Link>
+              )}
+              <Link href="/Courses" onClick={toggleMenu} className="p-2 hover:bg-gray-100 rounded">
+                Explore Courses
+              </Link>
+              {isLoggedIn ? (
+                <Button variant="destructive" onClick={handleLogout} className="mt-4">
+                  Logout
+                </Button>
+              ) : (
+                <Link href="/Login" onClick={toggleMenu} className="p-2 hover:bg-gray-100 rounded">
+                  Login
+                </Link>
+              )}
+            </div>
           </div>
-        </SheetContent>
-      </Sheet>
+        </div>
+      )}
     </div>
   );
 };
