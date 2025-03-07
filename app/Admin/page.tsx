@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "@/components/home/Navbar";
 import Footer from "@/components/footer/Footer";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,20 @@ import supabase from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
-
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs"
+import {
+  Select,
+  SelectContent, 
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import { X } from "lucide-react";
 const AdminPage = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -377,6 +390,267 @@ const AdminPage = () => {
     }
   };
   
+  // Add this to AdminPage component
+  const [selectedCourseId, setSelectedCourseId] = useState("");
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [scheduleType, setScheduleType] = useState<"one-time" | "recurring">("one-time");
+  const [classTitle, setClassTitle] = useState("");
+  const [classDescription, setClassDescription] = useState("");
+  const [classDate, setClassDate] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [duration, setDuration] = useState(60); // in minutes
+  const [meetingLink, setMeetingLink] = useState("");
+
+  // For recurring classes
+  const [recurringDays, setRecurringDays] = useState<number[]>([]);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
+  // For multi-class days
+  const [timeSlots, setTimeSlots] = useState<{day: number, time: string}[]>([]);
+
+  // Function to add a new time slot
+  const addTimeSlot = (day: number, time: string) => {
+    setTimeSlots([...timeSlots, {day, time}]);
+  };
+
+  // Function to schedule a one-time class
+  const scheduleOneTimeClass = async () => {
+    try {
+      setClassSchedulingError("");
+      setClassSchedulingSuccess(false);
+      
+      // Validate inputs
+      if (!selectedCourseId) {
+        setClassSchedulingError("Please select a course");
+        return;
+      }
+      
+      if (!classTitle) {
+        setClassSchedulingError("Please enter a class title");
+        return;
+      }
+      
+      if (!classDate || !startTime) {
+        setClassSchedulingError("Please select a date and time");
+        return;
+      }
+      
+      // Check if tables exist and create them if needed
+      try {
+        const { error: tableError } = await supabase
+          .from('course_classes')
+          .select('id')
+          .limit(1);
+          
+        if (tableError && tableError.message.includes("does not exist")) {
+          await createScheduleTables();
+        }
+      } catch (err) {
+        console.error("Error checking/creating tables:", err);
+      }
+      
+      const startDateTime = new Date(`${classDate}T${startTime}`);
+      const endDateTime = new Date(startDateTime.getTime() + duration * 60000);
+      
+      // Create course class
+      const { data: classData, error: classError } = await supabase
+        .from('course_classes')
+        .insert([{
+          course_id: selectedCourseId,
+          title: classTitle,
+          description: classDescription,
+          start_time: startDateTime.toISOString(),
+          end_time: endDateTime.toISOString(),
+          meeting_link: meetingLink,
+          recurring: false
+        }])
+        .select();
+        
+      if (classError) {
+        console.error("Error creating class:", classError);
+        throw classError;
+      }
+      
+      if (!classData || classData.length === 0) {
+        throw new Error("No data returned when creating class");
+      }
+      
+      // Create class instance
+      const { error: instanceError } = await supabase
+        .from('class_instances')
+        .insert([{
+          class_id: classData[0].id,
+          title: classTitle,
+          start_time: startDateTime.toISOString(),
+          end_time: endDateTime.toISOString(),
+          meeting_link: meetingLink
+        }]);
+        
+      if (instanceError) {
+        console.error("Error creating class instance:", instanceError);
+        throw instanceError;
+      }
+      
+      // Reset form
+      setClassTitle("");
+      setClassDescription("");
+      setMeetingLink("");
+      setClassDate("");
+      setStartTime("");
+      setSelectedCourseId("");
+      setClassSchedulingSuccess(true);
+      
+    } catch (err) {
+      console.error("Error scheduling class:", err);
+      setClassSchedulingError(err instanceof Error ? err.message : "Failed to schedule class");
+    }
+  };
+
+  // Function to create a recurring schedule
+  const createRecurringSchedule = async () => {
+    try {
+      setClassSchedulingError("");
+      setClassSchedulingSuccess(false);
+      
+      // Validate inputs
+      if (!selectedCourseId) {
+        setClassSchedulingError("Please select a course");
+        return;
+      }
+      
+      if (!classTitle) {
+        setClassSchedulingError("Please enter a class title");
+        return;
+      }
+      
+      if (recurringDays.length === 0) {
+        setClassSchedulingError("Please select at least one day of the week");
+        return;
+      }
+      
+      if (!startDate || !endDate) {
+        setClassSchedulingError("Please select start and end dates");
+        return;
+      }
+      
+      if (timeSlots.length === 0) {
+        setClassSchedulingError("Please add at least one class time");
+        return;
+      }
+      
+      // Check if the course_schedules table exists
+      const { error: tableError } = await supabase
+        .from('course_schedules')
+        .select('id')
+        .limit(1);
+        
+      if (tableError && tableError.message.includes("does not exist")) {
+        console.error("Table course_schedules does not exist:", tableError);
+        await createScheduleTables();
+      }
+      
+      // First create the schedule
+      const { data: scheduleData, error: scheduleError } = await supabase
+        .from('course_schedules')
+        .insert([{
+          course_id: selectedCourseId,
+          name: `${classTitle} Schedule`,
+          days_of_week: recurringDays,
+          start_date: startDate,
+          end_date: endDate,
+          class_duration: duration // This is the field with the issue - ensure it's class_duration without spaces
+        }])
+        .select();
+        
+      if (scheduleError) {
+        console.error("Error creating schedule:", scheduleError);
+        throw scheduleError;
+      }
+      
+      if (!scheduleData || scheduleData.length === 0) {
+        throw new Error("No schedule data returned");
+      }
+      
+      const scheduleId = scheduleData[0].id;
+      
+      // Then add all time slots
+      for (const slot of timeSlots) {
+        const { error: slotError } = await supabase
+          .from('schedule_time_slots')
+          .insert([{
+            schedule_id: scheduleId,
+            day_of_week: slot.day,
+            start_time: slot.time
+          }]);
+          
+        if (slotError) {
+          console.error("Error adding time slot:", slotError);
+          if (slotError.message.includes("does not exist")) {
+            await createScheduleTables();
+            throw new Error("Schedule tables were just created. Please try again.");
+          }
+          throw slotError;
+        }
+      }
+      
+      // For this demo, instead of using an RPC, let's manually create class instances
+      await createClassInstancesManually(
+        scheduleId, 
+        selectedCourseId, 
+        classTitle, 
+        classDescription, 
+        meetingLink,
+        recurringDays,
+        new Date(startDate),
+        new Date(endDate),
+        duration,
+        timeSlots
+      );
+      
+      // Reset form
+      setClassTitle("");
+      setClassDescription("");
+      setMeetingLink("");
+      setSelectedCourseId("");
+      setRecurringDays([]);
+      setTimeSlots([]);
+      setStartDate("");
+      setEndDate("");
+      setDuration(60);
+      setClassSchedulingSuccess(true);
+      
+    } catch (err) {
+      console.error("Error creating recurring schedule:", err);
+      setClassSchedulingError(err instanceof Error ? err.message : "Failed to create schedule");
+    }
+  };
+
+  // Fetch courses in useEffect
+  useEffect(() => {
+    // Add this to your existing useEffect or create a new one
+    const fetchCourses = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('courses')
+          .select('id, title');
+          
+        if (error) throw error;
+        setCourses(data || []);
+      } catch (err) {
+        console.error("Error fetching courses:", err);
+      }
+    };
+    
+    fetchCourses();
+  }, []);
+
+  // Add these state variables for the tab content
+  const [selectedDay, setSelectedDay] = useState<number | undefined>(undefined);
+  const [selectedTime, setSelectedTime] = useState("");
+  const [classSchedulingError, setClassSchedulingError] = useState("");
+  const [classSchedulingSuccess, setClassSchedulingSuccess] = useState(false);
+
   // Loading state while checking admin status
   if (adminCheckLoading) {
     return (
@@ -621,11 +895,370 @@ const AdminPage = () => {
           </CardContent>
         </Card>
         
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Schedule Classes</CardTitle>
+            <CardDescription>
+              Create class schedules for your courses
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {classSchedulingError && (
+              <div className="bg-red-50 p-4 mb-6 rounded-md flex items-start">
+                <AlertCircle className="text-red-500 mr-2 h-5 w-5 mt-0.5" />
+                <span className="text-red-600">{classSchedulingError}</span>
+              </div>
+            )}
+            
+            {classSchedulingSuccess && (
+              <div className="bg-green-50 p-4 mb-6 rounded-md flex items-start">
+                <CheckCircle2 className="text-green-500 mr-2 h-5 w-5 mt-0.5" />
+                <span className="text-green-600">
+                  {scheduleType === "one-time" 
+                    ? "Class scheduled successfully!" 
+                    : "Recurring schedule created successfully!"}
+                </span>
+              </div>
+            )}
+          
+            <Tabs defaultValue="one-time" onValueChange={(val) => setScheduleType(val as "one-time" | "recurring")}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="one-time">One-time Class</TabsTrigger>
+                <TabsTrigger value="recurring">Recurring Schedule</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="one-time" className="space-y-4 pt-4">
+                <form onSubmit={(e) => { e.preventDefault(); scheduleOneTimeClass(); }} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="courseSingle">Select Course</Label>
+                      <Select onValueChange={setSelectedCourseId} value={selectedCourseId}>
+                        <SelectTrigger id="courseSingle">
+                          <SelectValue placeholder="Select a course" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {courses.map(course => (
+                            <SelectItem key={course.id} value={course.id}>
+                              {course.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="classTitle">Class Title</Label>
+                      <Input 
+                        id="classTitle"
+                        placeholder="Introduction Session"
+                        value={classTitle}
+                        onChange={(e) => setClassTitle(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="classDescription">Description (Optional)</Label>
+                    <Textarea 
+                      id="classDescription"
+                      placeholder="What will be covered in this class..."
+                      value={classDescription}
+                      onChange={(e) => setClassDescription(e.target.value)}
+                      rows={2}
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="classDate">Date</Label>
+                      <Input 
+                        id="classDate"
+                        type="date"
+                        value={classDate}
+                        onChange={(e) => setClassDate(e.target.value)}
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="startTime">Start Time</Label>
+                      <Input 
+                        id="startTime"
+                        type="time"
+                        value={startTime}
+                        onChange={(e) => setStartTime(e.target.value)}
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="duration">Duration (minutes)</Label>
+                      <Input 
+                        id="duration"
+                        type="number"
+                        min="15"
+                        step="15"
+                        value={duration.toString()}
+                        onChange={(e) => setDuration(parseInt(e.target.value) || 60)}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="meetingLink">Meeting Link (Optional)</Label>
+                    <Input 
+                      id="meetingLink"
+                      placeholder="https://zoom.us/j/..."
+                      value={meetingLink}
+                      onChange={(e) => setMeetingLink(e.target.value)}
+                    />
+                  </div>
+                  
+                  <Button type="submit" className="w-full">
+                    Schedule Class
+                  </Button>
+                </form>
+              </TabsContent>
+              
+              <TabsContent value="recurring" className="space-y-4 pt-4">
+                <form onSubmit={(e) => { e.preventDefault(); createRecurringSchedule(); }} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="courseRecurring">Select Course</Label>
+                      <Select onValueChange={setSelectedCourseId} value={selectedCourseId}>
+                        <SelectTrigger id="courseRecurring">
+                          <SelectValue placeholder="Select a course" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {courses.map(course => (
+                            <SelectItem key={course.id} value={course.id}>
+                              {course.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="classTitleRecurring">Class Title</Label>
+                      <Input 
+                        id="classTitleRecurring"
+                        placeholder="Weekly Session"
+                        value={classTitle}
+                        onChange={(e) => setClassTitle(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label>Select Days</Label>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, idx) => (
+                        <Button
+                          key={idx}
+                          type="button"
+                          variant={recurringDays.includes(idx) ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => {
+                            if (recurringDays.includes(idx)) {
+                              setRecurringDays(recurringDays.filter(d => d !== idx));
+                            } else {
+                              setRecurringDays([...recurringDays, idx]);
+                            }
+                          }}
+                        >
+                          {day}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="startDate">Start Date</Label>
+                      <Input 
+                        id="startDate"
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="endDate">End Date</Label>
+                      <Input 
+                        id="endDate"
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Time slots section for multiple times per day */}
+                  <div>
+                    <Label>Class Times</Label>
+                    <div className="mt-2 space-y-3">
+                      {timeSlots.map((slot, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <div className="bg-slate-100 px-3 py-2 rounded-md flex-1">
+                            {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][slot.day]} at {slot.time}
+                          </div>
+                          <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => setTimeSlots(timeSlots.filter((_, i) => i !== idx))}
+                          >
+                            <X size={16} />
+                          </Button>
+                        </div>
+                      ))}
+                      
+                      {/* Add time slot form */}
+                      <div className="grid grid-cols-3 gap-2 mt-2">
+                        <Select onValueChange={(val) => setSelectedDay(parseInt(val))}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Day" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day, idx) => (
+                              <SelectItem key={idx} value={idx.toString()}>{day}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        
+                        <Input 
+                          type="time"
+                          value={selectedTime}
+                          onChange={(e) => setSelectedTime(e.target.value)}
+                        />
+                        
+                        <Button 
+                          type="button"
+                          onClick={() => {
+                            if (selectedDay !== undefined && selectedTime) {
+                              addTimeSlot(selectedDay, selectedTime);
+                              setSelectedTime("");
+                            }
+                          }}
+                          disabled={selectedDay === undefined || !selectedTime}
+                        >
+                          Add Time
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <Button type="submit" className="w-full mt-6">
+                    Create Schedule
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+        
         {/* You can add other admin functionality here */}
       </div>
       <Footer />
     </div>
   );
+};
+
+const createClassInstancesManually = async (
+  scheduleId: string,
+  courseId: string,
+  classTitle: string,
+  classDescription: string,
+  meetingLink: string,
+  daysOfWeek: number[],
+  startDate: Date,
+  endDate: Date,
+  duration: number,
+  timeSlots: {day: number, time: string}[]
+) => {
+  try {
+    // First create the parent course class
+    const { data: parentClass, error: parentClassError } = await supabase
+      .from('course_classes')
+      .insert([{
+        course_id: courseId,
+        title: classTitle,
+        description: classDescription,
+        start_time: startDate.toISOString(),
+        end_time: endDate.toISOString(),
+        recurring: true,
+        recurrence_pattern: daysOfWeek.join(','),
+        meeting_link: meetingLink
+      }])
+      .select();
+      
+    if (parentClassError) throw parentClassError;
+    if (!parentClass || parentClass.length === 0) throw new Error("Failed to create parent class");
+    
+    const parentClassId = parentClass[0].id;
+    
+    // Loop through every day from start to end date
+    const instances = [];
+    const current = new Date(startDate);
+    current.setHours(0, 0, 0, 0);
+    
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+    
+    // Create one instance for each day that matches the recurrence pattern
+    while (current <= end) {
+      const dayOfWeek = current.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      
+      // If this day is in our recurrence pattern
+      if (daysOfWeek.includes(dayOfWeek)) {
+        // Get all time slots for this day
+        const slotsForDay = timeSlots.filter(slot => slot.day === dayOfWeek);
+        
+        // Create an instance for each time slot
+        for (const slot of slotsForDay) {
+          // Parse the time string (e.g., "14:30")
+          const [hours, minutes] = slot.time.split(':').map(Number);
+          
+          // Create a new date for this instance
+          const instanceStart = new Date(current);
+          instanceStart.setHours(hours, minutes, 0, 0);
+          
+          // Calculate end time based on duration
+          const instanceEnd = new Date(instanceStart);
+          instanceEnd.setMinutes(instanceEnd.getMinutes() + duration);
+          
+          // Add to instances array
+          instances.push({
+            class_id: parentClassId,
+            title: classTitle,
+            start_time: instanceStart.toISOString(),
+            end_time: instanceEnd.toISOString(),
+            meeting_link: meetingLink
+          });
+        }
+      }
+      
+      // Move to next day
+      current.setDate(current.getDate() + 1);
+    }
+    
+    // Insert all instances in chunks to avoid request size limitations
+    const chunkSize = 50;
+    for (let i = 0; i < instances.length; i += chunkSize) {
+      const chunk = instances.slice(i, i + chunkSize);
+      
+      const { error: insertError } = await supabase
+        .from('class_instances')
+        .insert(chunk);
+        
+      if (insertError) throw insertError;
+    }
+    
+    return true;
+  } catch (err) {
+    console.error("Error creating class instances manually:", err);
+    throw err;
+  }
 };
 
 export default AdminPage;
