@@ -15,7 +15,6 @@ interface Course {
   instructor?: string;
   isEnrolled?: boolean;
 }
-
 const CoursesPage = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,11 +58,7 @@ const CoursesPage = () => {
           
           setCourses(coursesWithEnrollment);
           
-          // Log for debugging
-          console.log("Enrolled course IDs:", [...enrolledCourseIds]);
-          console.log("Courses with enrollment:", coursesWithEnrollment);
         } else {
-          // If no user, just set courses without enrollment data
           setCourses(coursesData || []);
         }
       } catch (err) {

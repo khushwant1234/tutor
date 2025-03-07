@@ -23,6 +23,8 @@ const AdminPage = () => {
   const [description, setDescription] = useState("");
   const [imageUrl, setImageUrl] = useState("https://placehold.co/600x400");
   const [instructor, setInstructor] = useState("");
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [otherInfo, setOtherInfo] = useState("");
   
   // Admin user form state
   const [adminEmail, setAdminEmail] = useState("");
@@ -58,7 +60,7 @@ const AdminPage = () => {
       return false;
     }
   };
-  
+
   React.useEffect(() => {
     const setup = async () => {
       // Initialize database tables first
@@ -123,7 +125,9 @@ const AdminPage = () => {
             title,
             description,
             image_url: imageUrl,
-            instructor
+            instructor,
+            preview_url: previewUrl,
+            other_info: otherInfo
           }
         ])
         .select();
@@ -138,6 +142,8 @@ const AdminPage = () => {
       setDescription("");
       setImageUrl("https://placehold.co/600x400");
       setInstructor("");
+      setPreviewUrl("");
+      setOtherInfo("");
       
     } catch (err: any) {
       console.error("Error adding course:", err);
@@ -479,6 +485,33 @@ const AdminPage = () => {
                   value={instructor}
                   onChange={(e) => setInstructor(e.target.value)}
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="previewUrl">YouTube Preview (Optional)</Label>
+                <Input 
+                  id="previewUrl"
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  value={previewUrl}
+                  onChange={(e) => setPreviewUrl(e.target.value)}
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Add a YouTube video URL to preview your course
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="otherInfo">Additional Information (Optional)</Label>
+                <Textarea 
+                  id="otherInfo"
+                  placeholder="Additional information about the course like prerequisites, requirements, etc."
+                  rows={3}
+                  value={otherInfo}
+                  onChange={(e) => setOtherInfo(e.target.value)}
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Optional details like prerequisites, technical requirements, etc.
+                </p>
               </div>
               
               <Button 

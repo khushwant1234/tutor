@@ -15,6 +15,9 @@ interface Course {
   description: string;
   image_url?: string;
   instructor?: string;
+  preview_url?: string; 
+  other_info?: string;
+  isEnrolled?: boolean;
 }
 
 interface UserData {
@@ -96,6 +99,19 @@ export default function CourseDetails() {
     }
   };
 
+  // Add this function to extract YouTube video ID
+  const getYoutubeEmbedUrl = (url: string) => {
+    if (!url) return null;
+    
+    // Handle different YouTube URL formats
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    
+    return match && match[2].length === 11 
+      ? `https://www.youtube.com/embed/${match[2]}` 
+      : null;
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col min-h-screen">
@@ -137,6 +153,22 @@ export default function CourseDetails() {
             </div>
           )}
 
+          {course.preview_url && (
+            <div className="mb-6">
+              <h2 className="text-2xl font-semibold mb-3">Course Preview</h2>
+              <div className="relative aspect-video w-full rounded-lg overflow-hidden">
+                <iframe
+                  src={getYoutubeEmbedUrl(course.preview_url)}
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="absolute top-0 left-0 w-full h-full"
+                ></iframe>
+              </div>
+            </div>
+          )}
+
           <h1 className="text-4xl font-bold mb-4">{course.title}</h1>
           
           {course.instructor && (
@@ -146,8 +178,19 @@ export default function CourseDetails() {
           )}
 
           <div className="prose max-w-none mb-8">
-            <p>{course.description}</p>
+            <h2 className="text-2xl font-semibold mb-3">Course Description</h2>
+            <div className="whitespace-pre-wrap">{course.description}</div>
           </div>
+
+          {/* Add this after the course description in your course details page */}
+          {course.other_info && (
+            <div className="mt-8">
+              <h2 className="text-2xl font-semibold mb-3">Additional Information</h2>
+              <div className="prose max-w-none bg-gray-50 p-6 rounded-lg border border-gray-200">
+                <div className="whitespace-pre-wrap">{course.other_info}</div>
+              </div>
+            </div>
+          )}
 
           <div className="mt-8">
             {isEnrolled ? (
@@ -176,3 +219,4 @@ export default function CourseDetails() {
     </div>
   );
 }
+

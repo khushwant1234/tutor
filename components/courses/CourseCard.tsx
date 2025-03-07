@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/badge"; 
 import Link from "next/link";
 import Image from "next/image";
 
@@ -14,15 +14,25 @@ interface CourseCardProps {
 }
 
 const CourseCard = ({ id, title, desc, image_url, instructor, isEnrolled }: CourseCardProps) => {
+  // Trim the description for the card
+  function trimDescription(text: string, maxLength: number = 300) {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  }
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full relative">
       {isEnrolled && (
-        <div className="absolute top-0 right-0 z-20 p-2">
-          <Badge className="bg-green-500 text-white border-none px-3 py-1 font-medium">
+        <div className="absolute top-4 -right-1 z-20">
+          <div className="bg-green-500 text-white px-4 py-1 font-medium rounded-l-full flex items-center shadow-md">
+            <div className="w-2 h-2 bg-white rounded-full mr-1.5"></div>
             Enrolled
-          </Badge>
+          </div>
+          <div className="absolute -bottom-2 right-0 w-0 h-0 
+                        border-t-8 border-t-green-700
+                        border-r-8 border-r-transparent"></div>
         </div>
       )}
+      
       {image_url ? (
         <div className="relative h-48 w-full">
           <Image 
@@ -42,7 +52,7 @@ const CourseCard = ({ id, title, desc, image_url, instructor, isEnrolled }: Cour
       <div className="p-5 flex flex-col flex-grow">
         <div className="flex-grow">
           <h3 className="text-xl font-semibold mb-2">{title}</h3>
-          <p className="text-gray-600 mb-4">{desc}</p>
+          <p className="text-gray-600 mb-4">{trimDescription(desc)}</p>
           
           {instructor && (
             <p className="text-sm text-gray-500 mb-4">
@@ -51,9 +61,9 @@ const CourseCard = ({ id, title, desc, image_url, instructor, isEnrolled }: Cour
           )}
         </div>
         
-        <div className="flex justify-center items-center mt-auto pt-4">
+        <div className="flex justify-between items-center pt-4 mt-auto">
           <Link href={`/Courses/${id}`}>
-            <Button>View Details</Button>
+            <Button variant="outline">Learn More</Button>
           </Link>
         </div>
       </div>
