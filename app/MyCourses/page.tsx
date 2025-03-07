@@ -13,6 +13,7 @@ interface Course {
   description: string;
   image_url?: string;
   instructor?: string;
+  isEnrolled?: boolean;
 }
 
 const MyCourses = () => {
@@ -94,7 +95,7 @@ const MyCourses = () => {
                 id={course.id}
                 image_url={course.image_url || ""}
                 instructor={course.instructor || ""}
-                hideEnroll={true}
+                isEnrolled={true}
               />
             ))}
           </div>

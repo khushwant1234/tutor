@@ -218,9 +218,9 @@ const ProfilePage = () => {
       const fileExt = blob.type.split('/')[1];
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `${userFolder}/${fileName}`;
-      
+
       console.log("Attempting to upload to:", filePath);
-      
+
       // Upload with more debug info
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('profile-images')

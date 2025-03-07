@@ -13,26 +13,59 @@ interface Course {
   description: string;
   image_url?: string;
   instructor?: string;
+  isEnrolled?: boolean;
 }
 
 const CoursesPage = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [user, setUser] = useState<{ id: string } | null>(null);
 
   useEffect(() => {
-    async function fetchCourses() {
+    async function fetchUserAndCourses() {
       try {
         setLoading(true);
         
+        // First, get the current user
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        setUser(currentUser);
+        
         // Fetch all courses from the database
-        const { data, error } = await supabase
+        const { data: coursesData, error: coursesError } = await supabase
           .from('courses')
           .select('*');
           
-        if (error) throw error;
+        if (coursesError) throw coursesError;
         
-        setCourses(data || []);
+        // If user is logged in, check enrollments
+        if (currentUser) {
+          // Get user enrollments
+          const { data: enrollments, error: enrollmentsError } = await supabase
+            .from('user_data')
+            .select('course_id')
+            .eq('user_id', currentUser.id);
+            
+          if (enrollmentsError) throw enrollmentsError;
+          
+          // Create a set of enrolled course IDs for faster lookup
+          const enrolledCourseIds = new Set(enrollments?.map(e => e.course_id) || []);
+          
+          // Mark courses as enrolled if they're in the user's enrollments
+          const coursesWithEnrollment = coursesData?.map(course => ({
+            ...course,
+            isEnrolled: enrolledCourseIds.has(course.id)
+          })) || [];
+          
+          setCourses(coursesWithEnrollment);
+          
+          // Log for debugging
+          console.log("Enrolled course IDs:", [...enrolledCourseIds]);
+          console.log("Courses with enrollment:", coursesWithEnrollment);
+        } else {
+          // If no user, just set courses without enrollment data
+          setCourses(coursesData || []);
+        }
       } catch (err) {
         console.error("Error fetching courses:", err);
         setError("Failed to load courses");
@@ -41,7 +74,7 @@ const CoursesPage = () => {
       }
     }
     
-    fetchCourses();
+    fetchUserAndCourses();
   }, []);
 
   return (
@@ -68,11 +101,12 @@ const CoursesPage = () => {
             {courses.map((course) => (
               <CourseCard
                 key={course.id}
+                id={course.id}
                 title={course.title}
                 desc={course.description}
-                id={course.id}
                 image_url={course.image_url}
                 instructor={course.instructor}
+                isEnrolled={course.isEnrolled}
               />
             ))}
           </div>

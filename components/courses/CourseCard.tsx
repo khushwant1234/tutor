@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import Image from "next/image";
-import supabase from "@/utils/supabase/client";
-import { Loader2, CheckCircle } from "lucide-react";
 
 interface CourseCardProps {
   id: string;
@@ -11,81 +10,19 @@ interface CourseCardProps {
   desc: string;
   image_url?: string;
   instructor?: string;
-  hideEnroll?: boolean; // Used for MyCourses page where we don't need enroll button
+  isEnrolled?: boolean;
 }
 
-// Define proper user type to fix ESLint error
-interface UserData {
-  id: string;
-  email?: string;
-}
-
-const CourseCard = ({ id, title, desc, image_url, instructor, hideEnroll = false }: CourseCardProps) => {
-  const [enrolling, setEnrolling] = useState(false);
-  const [isEnrolled, setIsEnrolled] = useState(false);
-  const [user, setUser] = useState<UserData | null>(null);
-
-  useEffect(() => {
-    // Check if user is already enrolled in this course
-    const checkEnrollment = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        setUser(user as UserData);
-        
-        if (!user) return;
-
-        const { data } = await supabase
-          .from('user_data')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('course_id', id)
-          .maybeSingle();
-          
-        setIsEnrolled(!!data);
-      } catch (err) {
-        console.error("Error checking enrollment:", err);
-      }
-    };
-    
-    checkEnrollment();
-  }, [id]);
-
-  const handleEnroll = async () => {
-    try {
-      setEnrolling(true);
-      
-      // Check if user is logged in
-      if (!user) {
-        alert("Please log in to enroll in courses");
-        return;
-      }
-      
-      // Enroll the user (add to user_data table)
-      const { error } = await supabase
-        .from('user_data')
-        .insert([
-          {
-            user_id: user.id,
-            course_id: id,
-          }
-        ]);
-        
-      if (error) throw error;
-      
-      // Update state to show enrolled
-      setIsEnrolled(true);
-      
-    } catch (err: unknown) {
-      console.error("Error enrolling in course:", err);
-      alert(err instanceof Error ? err.message : "Failed to enroll in course");
-    } finally {
-      setEnrolling(false);
-    }
-  };
-
+const CourseCard = ({ id, title, desc, image_url, instructor, isEnrolled }: CourseCardProps) => {
   return (
-    // Add h-full to make the card take full height of its container
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full relative">
+      {isEnrolled && (
+        <div className="absolute top-0 right-0 z-20 p-2">
+          <Badge className="bg-green-500 text-white border-none px-3 py-1 font-medium">
+            Enrolled
+          </Badge>
+        </div>
+      )}
       {image_url ? (
         <div className="relative h-48 w-full">
           <Image 
@@ -102,9 +39,7 @@ const CourseCard = ({ id, title, desc, image_url, instructor, hideEnroll = false
         </div>
       )}
       
-      {/* Add flex-col and flex-grow to make the content section expand */}
       <div className="p-5 flex flex-col flex-grow">
-        {/* This div will expand to fill available space */}
         <div className="flex-grow">
           <h3 className="text-xl font-semibold mb-2">{title}</h3>
           <p className="text-gray-600 mb-4">{desc}</p>
@@ -116,38 +51,10 @@ const CourseCard = ({ id, title, desc, image_url, instructor, hideEnroll = false
           )}
         </div>
         
-        {/* Add mt-auto to push this div to the bottom */}
-        <div className="flex justify-between items-center mt-auto pt-4">
-          <Link href={`/course/${id}`}>
-            <Button variant="outline">Learn More</Button>
+        <div className="flex justify-center items-center mt-auto pt-4">
+          <Link href={`/Courses/${id}`}>
+            <Button>View Details</Button>
           </Link>
-          
-          {!hideEnroll && (
-            isEnrolled ? (
-              <div className="flex items-center text-green-600">
-                <CheckCircle className="w-5 h-5 mr-1" />
-                <span>Enrolled</span>
-              </div>
-            ) : (
-              <Button 
-                onClick={handleEnroll} 
-                disabled={enrolling}
-              >
-                {enrolling ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Enrolling...
-                  </>
-                ) : 'Enroll'}
-              </Button>
-            )
-          )}
-          
-          {hideEnroll && (
-            <Link href={`/course/${id}/learn`}>
-              <Button>Go to Course</Button>
-            </Link>
-          )}
         </div>
       </div>
     </div>
