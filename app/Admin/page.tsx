@@ -389,7 +389,7 @@ const AdminPage = () => {
       setRevokeLoading(false);
     }
   };
-  
+ 
   // Add this to AdminPage component
   const [selectedCourseId, setSelectedCourseId] = useState("");
   const [courses, setCourses] = useState<Course[]>([]);
@@ -471,7 +471,7 @@ const AdminPage = () => {
           .from('course_classes')
           .select('id')
           .limit(1);
-          
+
         if (tableError && tableError.message.includes("does not exist")) {
           await createScheduleTables();
         }
@@ -481,7 +481,7 @@ const AdminPage = () => {
       
       const startDateTime = new Date(`${classDate}T${startTime}`);
       const endDateTime = new Date(startDateTime.getTime() + duration * 60000);
-      
+
       // Create course class
       const { data: classData, error: classError } = await supabase
         .from('course_classes')
@@ -515,7 +515,7 @@ const AdminPage = () => {
           end_time: endDateTime.toISOString(),
           meeting_link: meetingLink
         }]);
-        
+
       if (instanceError) {
         console.error("Error creating class instance:", instanceError);
         throw instanceError;
@@ -688,55 +688,58 @@ const AdminPage = () => {
   const [editClassError, setEditClassError] = useState("");
   const [editClassSuccess, setEditClassSuccess] = useState(false);
 
-  // Add this function to the AdminPage component
-  const fetchClassesForCourse = async (courseId: string) => {
-    try {
-      setLoadingClasses(true);
+  // Add this function to the AdminPage component - modify the existing fetchClassesForCourse function
+const fetchClassesForCourse = async (courseId: string) => {
+  try {
+    setLoadingClasses(true);
+    setClassesForCourse([]);
+    
+    // First fetch all course_classes for this course
+    const { data: classData, error: classError } = await supabase
+      .from('course_classes')
+      .select('*')
+      .eq('course_id', courseId)
+      .order('start_time', { ascending: true });
+      
+    if (classError) throw classError;
+    
+    if (!classData || classData.length === 0) {
       setClassesForCourse([]);
-      
-      // First fetch all course_classes for this course
-      const { data: classData, error: classError } = await supabase
-        .from('course_classes')
-        .select('*')
-        .eq('course_id', courseId)
-        .order('start_time', { ascending: true });
-        
-      if (classError) throw classError;
-      
-      if (!classData || classData.length === 0) {
-        setClassesForCourse([]);
-        return;
-      }
-      
-      // Then fetch instances for all these classes
-      const classIds = classData.map(c => c.id);
-      
-      const { data: instanceData, error: instanceError } = await supabase
-        .from('class_instances')
-        .select('*')
-        .in('class_id', classIds)
-        .order('start_time', { ascending: true });
-        
-      if (instanceError) throw instanceError;
-      
-      // Combine the data
-      const combinedData = instanceData?.map(instance => {
-        const parentClass = classData.find(c => c.id === instance.class_id);
-        return {
-          ...instance,
-          course_id: parentClass?.course_id,
-          recurring: parentClass?.recurring,
-          parent_title: parentClass?.title
-        };
-      }) || [];
-      
-      setClassesForCourse(combinedData);
-    } catch (err) {
-      console.error("Error fetching classes:", err);
-    } finally {
-      setLoadingClasses(false);
+      return;
     }
-  };
+    
+    // Then fetch instances for all these classes
+    const classIds = classData.map(c => c.id);
+    const now = new Date().toISOString();
+    
+    // Only fetch future classes for the Manage Classes section
+    const { data: instanceData, error: instanceError } = await supabase
+      .from('class_instances')
+      .select('*')
+      .in('class_id', classIds)
+      .gte('start_time', now) // Only get classes in the future
+      .order('start_time', { ascending: true });
+      
+    if (instanceError) throw instanceError;
+    
+    // Combine the data
+    const combinedData = instanceData?.map(instance => {
+      const parentClass = classData.find(c => c.id === instance.class_id);
+      return {
+        ...instance,
+        course_id: parentClass?.course_id,
+        recurring: parentClass?.recurring,
+        parent_title: parentClass?.title
+      };
+    }) || [];
+    
+    setClassesForCourse(combinedData);
+  } catch (err) {
+    console.error("Error fetching classes:", err);
+  } finally {
+    setLoadingClasses(false);
+  }
+};
 
   // Add this function to update meeting links
   const updateClassMeetingLink = async (classId: string, meetingLink: string) => {
@@ -1390,9 +1393,9 @@ const AdminPage = () => {
         {/* Add this card after your Schedule Classes card */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Manage Class Links</CardTitle>
+            <CardTitle>Manage Classes</CardTitle>
             <CardDescription>
-              Update meeting links for existing classes
+              Update meeting links or delete upcoming classes
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -1406,7 +1409,7 @@ const AdminPage = () => {
             {editClassSuccess && (
               <div className="bg-green-50 p-4 mb-6 rounded-md flex items-start">
                 <CheckCircle2 className="text-green-500 mr-2 h-5 w-5 mt-0.5" />
-                <span className="text-green-600">Meeting link updated successfully!</span>
+                <span className="text-green-600">Class updated successfully!</span>
               </div>
             )}
             
@@ -1431,6 +1434,9 @@ const AdminPage = () => {
                     ))}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Only upcoming classes are shown. Past classes cannot be modified.
+                </p>
               </div>
               
               {loadingClasses && (
@@ -1442,7 +1448,7 @@ const AdminPage = () => {
               
               {!loadingClasses && classesForCourse.length === 0 && manageCourseId && (
                 <div className="py-8 text-center">
-                  <p className="text-gray-500">No classes found for this course.</p>
+                  <p className="text-gray-500">No upcoming classes found for this course.</p>
                   <Button 
                     variant="outline" 
                     className="mt-4"
@@ -1460,8 +1466,8 @@ const AdminPage = () => {
               
               {!loadingClasses && classesForCourse.length > 0 && (
                 <div className="border rounded-md overflow-hidden">
-                  {/* Add this above the class listing table, inside the Card */}
-                  <div className="mb-4">
+                  {/* Bulk operations toolbar */}
+                  <div className="mb-4 flex flex-wrap gap-2 p-4 bg-gray-50">
                     <Button
                       variant="secondary"
                       onClick={() => {
@@ -1553,9 +1559,104 @@ const AdminPage = () => {
                         };
                       }}
                     >
-                      Bulk Update Recurring Classes
+                      Bulk Update Meeting Links
+                    </Button>
+                    
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        // Group classes by parent class_id to show recurring classes
+                        const parentClasses = classesForCourse.reduce((acc, cls) => {
+                          if (cls.recurring) {
+                            if (!acc[cls.class_id]) {
+                              acc[cls.class_id] = {
+                                id: cls.class_id,
+                                title: cls.parent_title || cls.title,
+                                count: 1
+                              };
+                            } else {
+                              acc[cls.class_id].count++;
+                            }
+                          }
+                          return acc;
+                        }, {});
+                        
+                        // If there are recurring classes, show a modal to select which one to bulk update
+                        const recurringClasses = Object.values(parentClasses);
+                        
+                        if (recurringClasses.length === 0) {
+                          alert("No recurring classes found for this course.");
+                          return;
+                        }
+                        
+                        // Show a dialog to select which recurring class series to delete
+                        const select = document.createElement('select');
+                        select.id = 'deleteRecurringClassSelect';
+                        select.className = 'p-2 border rounded w-full mb-4';
+                        
+                        recurringClasses.forEach((cls: any) => {
+                          const option = document.createElement('option');
+                          option.value = cls.id;
+                          option.textContent = `${cls.title} (${cls.count} classes)`;
+                          select.appendChild(option);
+                        });
+                        
+                        const dialog = document.createElement('div');
+                        dialog.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
+                        
+                        const content = document.createElement('div');
+                        content.className = 'bg-white rounded-lg p-6 max-w-md w-full mx-4';
+                        content.innerHTML = `
+                          <h3 class="text-lg font-medium mb-2">Delete Recurring Class Series</h3>
+                          <p class="text-sm text-gray-500 mb-4">Choose a recurring class series to delete.</p>
+                          <div class="bg-yellow-50 p-3 mb-4 rounded border border-yellow-300 text-yellow-800 text-sm">
+                            <strong>Warning:</strong> This will delete all future instances of this class. This action cannot be undone.
+                          </div>
+                        `;
+                        
+                        content.appendChild(select);
+                        
+                        const buttonContainer = document.createElement('div');
+                        buttonContainer.className = 'flex justify-end space-x-2 mt-4';
+                        
+                        const cancelButton = document.createElement('button');
+                        cancelButton.className = 'px-4 py-2 border rounded text-gray-700 bg-white hover:bg-gray-50';
+                        cancelButton.textContent = 'Cancel';
+                        cancelButton.onclick = () => document.body.removeChild(dialog);
+                        
+                        const confirmButton = document.createElement('button');
+                        confirmButton.className = 'px-4 py-2 rounded text-white bg-red-600 hover:bg-red-700';
+                        confirmButton.textContent = 'Delete All';
+                        confirmButton.onclick = () => {
+                          const selectedClassId = select.value;
+                          
+                          // Show confirmation dialog
+                          if (confirm("Are you sure you want to delete all instances of this class? This cannot be undone.")) {
+                            deleteBulkClasses(selectedClassId);
+                          }
+                          
+                          document.body.removeChild(dialog);
+                        };
+                        
+                        buttonContainer.appendChild(cancelButton);
+                        buttonContainer.appendChild(confirmButton);
+                        content.appendChild(buttonContainer);
+                        
+                        dialog.appendChild(content);
+                        document.body.appendChild(dialog);
+                        
+                        // Make the dialog dismissable by clicking outside
+                        dialog.onclick = (e) => {
+                          if (e.target === dialog) {
+                            document.body.removeChild(dialog);
+                          }
+                        };
+                      }}
+                    >
+                      Delete Recurring Classes
                     </Button>
                   </div>
+                  
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
@@ -1579,13 +1680,23 @@ const AdminPage = () => {
                         const formattedDate = startDate.toLocaleDateString();
                         const formattedTime = startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                         
+                        // Calculate days until class
+                        const today = new Date();
+                        const daysUntil = Math.ceil((startDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                        const isUpcoming = daysUntil <= 7; // Consider classes within 7 days as upcoming
+                        
                         return (
-                          <tr key={cls.id} className={cls.id === selectedClassId ? "bg-blue-50" : ""}>
+                          <tr key={cls.id} className={cls.id === selectedClassId ? "bg-blue-50" : (isUpcoming ? "bg-yellow-50/30" : "")}>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="text-sm font-medium text-gray-900">{cls.title}</div>
                               {cls.recurring && (
                                 <div className="text-xs text-gray-500">
                                   Recurring
+                                </div>
+                              )}
+                              {isUpcoming && (
+                                <div className="text-xs text-amber-600 font-medium">
+                                  {daysUntil === 0 ? "Today" : daysUntil === 1 ? "Tomorrow" : `In ${daysUntil} days`}
                                 </div>
                               )}
                             </td>
@@ -1635,16 +1746,25 @@ const AdminPage = () => {
                                   </Button>
                                 </div>
                               ) : (
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  onClick={() => {
-                                    setSelectedClassId(cls.id);
-                                    setEditClassLink(cls.meeting_link || "");
-                                  }}
-                                >
-                                  Edit Link
-                                </Button>
+                                <div className="flex justify-end space-x-2">
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    onClick={() => {
+                                      setSelectedClassId(cls.id);
+                                      setEditClassLink(cls.meeting_link || "");
+                                    }}
+                                  >
+                                    Edit Link
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    variant="destructive"
+                                    onClick={() => confirmDeleteClass(cls)}
+                                  >
+                                    Delete
+                                  </Button>
+                                </div>
                               )}
                             </td>
                           </tr>
@@ -1803,6 +1923,147 @@ const createClassInstancesManually = async (
     console.error("Error creating class instances manually:", err);
     throw err;
   }
+};
+
+// Add this function to delete a single class instance
+const deleteClassInstance = async (classId: string) => {
+  try {
+    setEditClassError("");
+    setEditClassSuccess(false);
+    setEditingClass(true);
+    
+    // Delete the class instance
+    const { error } = await supabase
+      .from('class_instances')
+      .delete()
+      .eq('id', classId);
+      
+    if (error) throw error;
+    
+    // Remove it from local state
+    setClassesForCourse(classes => classes.filter(c => c.id !== classId));
+    
+    setEditClassSuccess(true);
+    setTimeout(() => setEditClassSuccess(false), 3000);
+  } catch (err) {
+    console.error("Error deleting class:", err);
+    setEditClassError(err instanceof Error ? err.message : "Failed to delete class");
+  } finally {
+    setEditingClass(false);
+  }
+};
+
+// Add this function to delete all instances of a recurring class
+const deleteBulkClasses = async (parentClassId: string) => {
+  try {
+    setEditClassError("");
+    setEditClassSuccess(false);
+    setEditingClass(true);
+    
+    // First, get all future instances of this class
+    const now = new Date().toISOString();
+    
+    const { data: instances, error: instancesError } = await supabase
+      .from('class_instances')
+      .select('id')
+      .eq('class_id', parentClassId)
+      .gte('start_time', now);
+      
+    if (instancesError) throw instancesError;
+    
+    if (!instances || instances.length === 0) {
+      setEditClassError("No future instances found for this class");
+      setEditingClass(false);
+      return;
+    }
+    
+    // Delete all instances
+    const instanceIds = instances.map(i => i.id);
+    
+    // Delete in chunks if there are many instances
+    const chunkSize = 50;
+    for (let i = 0; i < instanceIds.length; i += chunkSize) {
+      const chunk = instanceIds.slice(i, i + chunkSize);
+      
+      const { error: deleteError } = await supabase
+        .from('class_instances')
+        .delete()
+        .in('id', chunk);
+        
+      if (deleteError) throw deleteError;
+    }
+    
+    // Refresh the class list
+    if (manageCourseId) {
+      fetchClassesForCourse(manageCourseId);
+    }
+    
+    setEditClassSuccess(true);
+    setTimeout(() => setEditClassSuccess(false), 3000);
+  } catch (err) {
+    console.error("Error deleting classes:", err);
+    setEditClassError(err instanceof Error ? err.message : "Failed to delete classes");
+  } finally {
+    setEditingClass(false);
+  }
+};
+
+// Add this function to show a confirmation dialog before deleting a class
+const confirmDeleteClass = (classInstance: any) => {
+  // Create modal for confirmation
+  const dialog = document.createElement('div');
+  dialog.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
+  
+  const content = document.createElement('div');
+  content.className = 'bg-white rounded-lg p-6 max-w-md w-full mx-4';
+  
+  const startDate = new Date(classInstance.start_time);
+  const formattedDate = startDate.toLocaleDateString();
+  const formattedTime = startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  
+  content.innerHTML = `
+    <h3 class="text-lg font-medium mb-2">Delete Class</h3>
+    <p class="text-sm text-gray-500 mb-4">Are you sure you want to delete this class?</p>
+    
+    <div class="bg-gray-50 p-4 rounded-md mb-4">
+      <div class="font-medium">${classInstance.title}</div>
+      <div class="text-sm text-gray-500">${formattedDate} at ${formattedTime}</div>
+    </div>
+    
+    <div class="bg-yellow-50 p-3 mb-4 rounded border border-yellow-300 text-yellow-800 text-sm">
+      <strong>Warning:</strong> This action cannot be undone.
+    </div>
+  `;
+  
+  const buttonContainer = document.createElement('div');
+  buttonContainer.className = 'flex justify-end space-x-2 mt-4';
+  
+  const cancelButton = document.createElement('button');
+  cancelButton.className = 'px-4 py-2 border rounded text-gray-700 bg-white hover:bg-gray-50';
+  cancelButton.textContent = 'Cancel';
+  cancelButton.onclick = () => document.body.removeChild(dialog);
+  
+  const confirmButton = document.createElement('button');
+  confirmButton.className = 'px-4 py-2 rounded text-white bg-red-600 hover:bg-red-700';
+  confirmButton.textContent = 'Delete Class';
+  confirmButton.onclick = () => {
+    deleteClassInstance(classInstance.id);
+    document.body.removeChild(dialog);
+  };
+  
+  buttonContainer.appendChild(cancelButton);
+  buttonContainer.appendChild(confirmButton);
+  content.appendChild(buttonContainer);
+  
+  dialog.appendChild(content);
+  document.body.appendChild(dialog);
+  
+  // Make the dialog dismissable by clicking outside
+  dialog.onclick = (e) => {
+    if (e.target === dialog) {
+      document.body.removeChild(dialog);
+    }
+  };
 };
 
 export default AdminPage;
