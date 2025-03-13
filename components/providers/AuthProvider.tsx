@@ -1,6 +1,6 @@
 "use client";
 import { createContext, useContext, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import supabase from "@/utils/supabase/client";
 
 type AuthContextType = {
@@ -17,11 +17,17 @@ const AuthContext = createContext<AuthContextType>({
   refresh: async () => {},
 });
 
+// Pages that require authentication
+const PROTECTED_ROUTES = ['/Dashboard', '/Profile', '/MyCourses'];
+// Pages that require admin access
+const ADMIN_ROUTES = ['/Admin'];
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
 
   const checkUserRole = async (userId: string) => {
     try {
@@ -61,9 +67,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Check routes for auth/admin requirements
+  useEffect(() => {
+    if (isLoading) return;
+
+    // Handle protected routes
+    if (PROTECTED_ROUTES.includes(pathname) && !user) {
+      router.push('/Login');
+    }
+
+    // Handle admin routes
+    if (ADMIN_ROUTES.includes(pathname) && (!user || !isAdmin)) {
+      router.push('/Dashboard');
+    }
+  }, [pathname, user, isAdmin, isLoading, router]);
+
   useEffect(() => {
     refresh();
 
+    // Subscribe to auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === "SIGNED_IN" && session) {

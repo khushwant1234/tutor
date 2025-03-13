@@ -79,13 +79,13 @@ const ProfilePage = () => {
                          "email";
         
         setIsOAuthUser(provider !== "email");
-        
+
         // Set initial form values
         setDisplayName(user.user_metadata?.displayName || 
                        user.user_metadata?.full_name || 
                        "");
-        
-        setAvatarUrl(user.user_metadata?.avatar_url || "");
+
+        setAvatarUrl(user.user_metadata?.image_url || user.user_metadata?.avatar_url || "");
         
       } catch (err) {
         console.error("Error loading profile:", err);
@@ -250,11 +250,11 @@ const ProfilePage = () => {
       console.log("Public URL:", publicUrl);
       // Update user metadata
       const { error: updateError } = await supabase.auth.updateUser({
-        data: { avatar_url: publicUrl }
+        data: { image_url: publicUrl }
       });
-      
+
       if (updateError) throw updateError;
-      
+
       setAvatarUrl(publicUrl);
       setAvatarSuccess(true);
     } catch (err) {

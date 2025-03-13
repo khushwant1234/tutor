@@ -52,8 +52,8 @@ const Navbar = () => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                 <Avatar>
-                  <AvatarImage src={user?.user_metadata?.avatar_url} />
-                  <AvatarFallback>{getInitials(user?.user_metadata?.display_name)}</AvatarFallback>
+                  <AvatarImage src={user.user_metadata?.image_url || user.user_metadata?.avatar_url} />
+                  <AvatarFallback>{getInitials(user?.user_metadata?.full_name)}</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
