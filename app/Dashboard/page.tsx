@@ -6,7 +6,16 @@ import Navbar from "@/components/home/Navbar";
 import Footer from "@/components/footer/Footer";
 import Link from "next/link";
 import Image from "next/image";
-import { Loader2, AlertCircle, Calendar, BookOpen, ChevronRight, Clock, ExternalLink, Video } from "lucide-react";
+import {
+  Loader2,
+  AlertCircle,
+  Calendar,
+  BookOpen,
+  ChevronRight,
+  Clock,
+  ExternalLink,
+  Video
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,13 +23,13 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
+  CardTitle
 } from "@/components/ui/card";
 import {
   Tabs,
   TabsContent,
   TabsList,
-  TabsTrigger,
+  TabsTrigger
 } from "@/components/ui/tabs";
 import supabase from "@/utils/supabase/client";
 
@@ -44,17 +53,17 @@ interface Course {
 }
 
 interface UpcomingClass {
-    id: string;
-    title: string;
-    date: string;
-    time: string;
-    duration: number; // in minutes
-    course_id: string;
-    course_title?: string;
-    instructor?: string;
-    meeting_link?: string; // Add this property
-    status?: string; // Add this property
-  }
+  id: string;
+  title: string;
+  date: string;
+  time: string;
+  duration: number;
+  course_id: string;
+  course_title?: string;
+  instructor?: string;
+  meeting_link?: string;
+  status?: string;
+}
 
 const Dashboard = () => {
   const router = useRouter();
@@ -65,14 +74,27 @@ const Dashboard = () => {
   const [error, setError] = useState("");
   const [selectedClass, setSelectedClass] = useState<UpcomingClass | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  
-  // Simple custom modal component to avoid Radix dependency issues
-  const SimpleModal = ({ open, onClose, children }: { open: boolean, onClose: () => void, children: React.ReactNode }) => {
+
+  // Simple custom modal
+  const SimpleModal = ({
+    open,
+    onClose,
+    children
+  }: {
+    open: boolean;
+    onClose: () => void;
+    children: React.ReactNode;
+  }) => {
     if (!open) return null;
-    
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
-        <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4" onClick={e => e.stopPropagation()}>
+      <div
+        className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+        onClick={onClose}
+      >
+        <div
+          className="bg-white rounded-lg p-6 max-w-md w-full mx-4"
+          onClick={(e) => e.stopPropagation()}
+        >
           {children}
         </div>
       </div>
@@ -83,45 +105,43 @@ const Dashboard = () => {
     async function fetchUserData() {
       try {
         setLoading(true);
-        
-        // Get current user
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        
+
+        const {
+          data: { user },
+          error: userError
+        } = await supabase.auth.getUser();
+
         if (userError || !user) {
           throw new Error("Please log in to view your dashboard");
         }
-        
         setUser(user);
-        
+
         // Get user's enrolled courses
         const { data: enrollmentData, error: enrollmentError } = await supabase
-          .from('user_data')
-          .select(`course_id`)
-          .eq('user_id', user.id);
-        
+          .from("user_data")
+          .select("course_id")
+          .eq("user_id", user.id);
+
         if (enrollmentError) throw enrollmentError;
-        
-        // If user has enrolled courses
+
         if (enrollmentData && enrollmentData.length > 0) {
-          const courseIds = enrollmentData.map(item => item.course_id);
-          
-          // Fetch course data
+          const courseIds = enrollmentData.map((item) => item.course_id);
+
           const { data: courseData, error: courseError } = await supabase
-            .from('courses')
-            .select('*')
-            .in('id', courseIds);
-          
+            .from("courses")
+            .select("*")
+            .in("id", courseIds);
+
           if (courseError) throw courseError;
           setEnrolledCourses(courseData || []);
-          
-          // Try to fetch upcoming classes
+
           try {
             const now = new Date().toISOString();
             const nextWeek = new Date();
             nextWeek.setDate(nextWeek.getDate() + 7);
-            
+
             const { data: classData, error: classError } = await supabase
-              .from('class_instances')
+              .from("class_instances")
               .select(`
                 id,
                 title,
@@ -129,40 +149,38 @@ const Dashboard = () => {
                 end_time,
                 meeting_link,
                 status,
-                course_classes(
-                  course_id
-                )
+                course_classes(course_id)
               `)
-              .gte('start_time', now)
-              .lte('start_time', nextWeek.toISOString())
-              .in('course_classes.course_id', courseIds)
-              .order('start_time', { ascending: true });
-              
+              .gte("start_time", now)
+              .lte("start_time", nextWeek.toISOString())
+              .in("course_classes.course_id", courseIds)
+              .order("start_time", { ascending: true });
+
             if (classError) {
               console.error("Error fetching classes:", classError);
-              // If error is because tables don't exist, use dummy data
               if (classError.message?.includes("does not exist")) {
-                useDummyClasses(courseData);
+                // If a table doesn't exist, do nothing here or handle differently
               } else {
                 throw classError;
               }
             } else if (classData && classData.length > 0) {
-              // Transform the data
-              const upcoming = classData.map(cls => {
-                // Format the start time
+              const upcoming = classData.map((cls) => {
                 const startDate = new Date(cls.start_time);
                 const endDate = new Date(cls.end_time);
-                const durationMins = Math.round((endDate.getTime() - startDate.getTime()) / 60000);
-                
-                // Find the course for this class
+                const durationMins = Math.round(
+                  (endDate.getTime() - startDate.getTime()) / 60000
+                );
                 const courseId = cls.course_classes.course_id;
-                const course = courseData.find(c => c.id === courseId);
-                
+                const course = (courseData || []).find((c) => c.id === courseId);
+
                 return {
                   id: cls.id,
                   title: cls.title,
                   date: startDate.toLocaleDateString(),
-                  time: startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                  time: startDate.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit"
+                  }),
                   duration: durationMins,
                   course_id: courseId,
                   course_title: course?.title || "Unknown Course",
@@ -170,23 +188,19 @@ const Dashboard = () => {
                   status: cls.status
                 };
               });
-              
+
               setUpcomingClasses(upcoming);
-            } else {
-              // No classes found, use dummy data instead
-              useDummyClasses(courseData);
             }
           } catch (err) {
             console.error("Error with class data:", err);
-            // Use dummy data as fallback
-            useDummyClasses(courseData);
           }
         }
       } catch (err) {
         console.error("Error loading dashboard:", err);
-        setError(err instanceof Error ? err.message : "Failed to load dashboard data");
-        
-        // Redirect to login if not authenticated
+        setError(
+          err instanceof Error ? err.message : "Failed to load dashboard data"
+        );
+
         if (err instanceof Error && err.message.includes("log in")) {
           router.push("/Login");
         }
@@ -194,68 +208,17 @@ const Dashboard = () => {
         setLoading(false);
       }
     }
-    
-    // Helper function to generate dummy class data when real data isn't available
-    function useDummyClasses(courses: Course[]) {
-      // Only create dummy classes if there are enrolled courses
-      if (courses && courses.length > 0) {
-        const now = new Date();
-        const dummyClasses: UpcomingClass[] = [];
-        
-        // Create 1-2 dummy classes per course
-        courses.forEach((course, index) => {
-          // First class in 2 days
-          const firstClassDate = new Date();
-          firstClassDate.setDate(now.getDate() + 2 + index);
-          
-          dummyClasses.push({
-            id: `dummy-${index}-1`,
-            title: `Introduction to ${course.title}`,
-            date: firstClassDate.toLocaleDateString(),
-            time: "10:00 AM",
-            duration: 60,
-            course_id: course.id,
-            course_title: course.title,
-            instructor: course.instructor,
-            meeting_link: "https://zoom.us/j/example"
-          });
-          
-          // Second class in 5 days (for some courses)
-          if (index % 2 === 0) {
-            const secondClassDate = new Date();
-            secondClassDate.setDate(now.getDate() + 5 + index);
-            
-            dummyClasses.push({
-              id: `dummy-${index}-2`,
-              title: `Advanced Concepts in ${course.title}`,
-              date: secondClassDate.toLocaleDateString(),
-              time: "2:00 PM",
-              duration: 90,
-              course_id: course.id,
-              course_title: course.title,
-              instructor: course.instructor,
-              meeting_link: "https://zoom.us/j/example"
-            });
-          }
-        });
-        
-        // Sort by date
-        dummyClasses.sort((a, b) => {
-          return new Date(a.date).getTime() - new Date(b.date).getTime();
-        });
-        
-        setUpcomingClasses(dummyClasses);
-      }
-    }
 
     fetchUserData();
   }, [router]);
 
-  // Format the welcome message based on time of day
   const getWelcomeMessage = () => {
     const hour = new Date().getHours();
-    const name = user?.user_metadata?.name || user?.user_metadata?.full_name || "there";
-    
+    const name =
+      user?.user_metadata?.name ||
+      user?.user_metadata?.full_name ||
+      "there";
+
     if (hour < 12) return `Good morning, ${name}`;
     if (hour < 18) return `Good afternoon, ${name}`;
     return `Good evening, ${name}`;
@@ -304,7 +267,7 @@ const Dashboard = () => {
               Here's what's happening with your courses
             </p>
           </div>
-          
+
           <div className="mt-4 md:mt-0">
             <Link href="/Courses">
               <Button className="bg-blue-600 hover:bg-blue-700">
@@ -313,7 +276,7 @@ const Dashboard = () => {
             </Link>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left column - Upcoming classes */}
           <div className="lg:col-span-2">
@@ -349,9 +312,7 @@ const Dashboard = () => {
                               {cls.course_title}
                             </span>
                           </div>
-                          
                           <h3 className="font-medium">{cls.title}</h3>
-                          
                           <div className="flex items-center mt-2">
                             <Clock className="h-4 w-4 mr-1 text-gray-500" />
                             <span className="text-sm text-gray-600">
@@ -359,7 +320,6 @@ const Dashboard = () => {
                             </span>
                           </div>
                         </div>
-                        
                         <Button
                           variant="outline"
                           className="mt-4 md:mt-0"
@@ -374,7 +334,11 @@ const Dashboard = () => {
               </CardContent>
               {upcomingClasses.length > 0 && (
                 <CardFooter className="border-t pt-4">
-                  <Button variant="ghost" className="w-full text-blue-600" onClick={() => alert("Calendar view coming soon!")}>
+                  <Button
+                    variant="ghost"
+                    className="w-full text-blue-600"
+                    onClick={() => alert("Calendar view coming soon!")}
+                  >
                     View Full Calendar
                     <ChevronRight className="h-4 w-4 ml-1" />
                   </Button>
@@ -382,7 +346,6 @@ const Dashboard = () => {
               )}
             </Card>
           </div>
-          
           {/* Right column - Enrolled courses & quick links */}
           <div className="space-y-6">
             <Card>
@@ -398,7 +361,9 @@ const Dashboard = () => {
               <CardContent>
                 {enrolledCourses.length === 0 ? (
                   <div className="text-center py-6">
-                    <p className="text-gray-500">You haven't enrolled in any courses yet.</p>
+                    <p className="text-gray-500">
+                      You haven't enrolled in any courses yet.
+                    </p>
                     <Button variant="outline" className="mt-4" asChild>
                       <Link href="/Courses">Browse Courses</Link>
                     </Button>
@@ -423,16 +388,16 @@ const Dashboard = () => {
                               <BookOpen className="h-6 w-6 text-gray-500" />
                             </div>
                           )}
-                          
                           <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-sm truncate">{course.title}</h4>
+                            <h4 className="font-medium text-sm truncate">
+                              {course.title}
+                            </h4>
                             {course.instructor && (
                               <p className="text-xs text-gray-500 truncate">
                                 by {course.instructor}
                               </p>
                             )}
                           </div>
-                          
                           <ChevronRight className="h-4 w-4 text-gray-400" />
                         </div>
                       </Link>
@@ -451,7 +416,6 @@ const Dashboard = () => {
                 </CardFooter>
               )}
             </Card>
-            
             <Card>
               <CardHeader>
                 <CardTitle>Quick Links</CardTitle>
@@ -468,7 +432,6 @@ const Dashboard = () => {
                       </span>
                     </Link>
                   </Button>
-                  
                   <Button variant="outline" className="w-full justify-start" asChild>
                     <Link href="/MyCourses">
                       <span className="flex items-center">
@@ -479,8 +442,11 @@ const Dashboard = () => {
                       </span>
                     </Link>
                   </Button>
-                  
-                  <Button variant="outline" className="w-full justify-start" onClick={() => alert("Coming soon!")}>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => alert("Coming soon!")}
+                  >
                     <span className="flex items-center">
                       <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center mr-3">
                         <span className="text-green-600 font-medium">C</span>
@@ -499,42 +465,44 @@ const Dashboard = () => {
         {selectedClass && (
           <>
             <h2 className="text-xl font-semibold mb-2">Join Class</h2>
-            <p className="text-gray-500 mb-4">You're about to join {selectedClass.title}</p>
-            
+            <p className="text-gray-500 mb-4">
+              You're about to join {selectedClass.title}
+            </p>
             <div className="rounded-md bg-blue-50 p-4 mb-6">
               <div className="flex">
                 <div className="flex-shrink-0">
                   <Video className="h-5 w-5 text-blue-400 mr-2" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-blue-800">{selectedClass.course_title}</h3>
+                  <h3 className="text-sm font-medium text-blue-800">
+                    {selectedClass.course_title}
+                  </h3>
                   <div className="mt-2 text-sm text-blue-700">
-                    <p>{selectedClass.date} at {selectedClass.time}</p>
-                    <p className="mt-1">Duration: {selectedClass.duration} minutes</p>
+                    <p>
+                      {selectedClass.date} at {selectedClass.time}
+                    </p>
+                    <p className="mt-1">
+                      Duration: {selectedClass.duration} minutes
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
-            
             <div className="flex justify-end gap-2">
-              <Button 
-                variant="outline" 
-                onClick={() => setModalOpen(false)}
-              >
+              <Button variant="outline" onClick={() => setModalOpen(false)}>
                 Cancel
               </Button>
-              
-              <Button 
+              <Button
                 onClick={() => {
                   if (selectedClass.meeting_link) {
-                    window.open(selectedClass.meeting_link, '_blank');
+                    window.open(selectedClass.meeting_link, "_blank");
                   }
                   setModalOpen(false);
                 }}
                 disabled={!selectedClass.meeting_link}
               >
                 <ExternalLink className="mr-2 h-4 w-4" />
-                {selectedClass.meeting_link ? 'Join Now' : 'No Link Available'}
+                {selectedClass.meeting_link ? "Join Now" : "No Link Available"}
               </Button>
             </div>
           </>

@@ -81,7 +81,7 @@ const ProfilePage = () => {
         setIsOAuthUser(provider !== "email");
         
         // Set initial form values
-        setDisplayName(user.user_metadata?.name || 
+        setDisplayName(user.user_metadata?.displayName || 
                        user.user_metadata?.full_name || 
                        "");
         
@@ -110,7 +110,7 @@ const ProfilePage = () => {
       }
       
       const { error } = await supabase.auth.updateUser({
-        data: { name: displayName }
+        data: { full_name: displayName }
       });
       
       if (error) throw error;
@@ -233,16 +233,21 @@ const ProfilePage = () => {
         console.error("Upload error details:", uploadError);
         throw uploadError;
       }
-      
+
       console.log("Upload successful:", uploadData);
-      
-      // Get the public URL
+      console.log("Public URL:", uploadData.path);
+      console.log("BUHAH:", filePath);
+      interface UploadImageResponse {
+        publicUrl: string | null;
+      }
+
       const { data } = supabase.storage
         .from('profile-images')
         .getPublicUrl(filePath);
-      
+
       const publicUrl = data.publicUrl;
-      
+      console.log(data);
+      console.log("Public URL:", publicUrl);
       // Update user metadata
       const { error: updateError } = await supabase.auth.updateUser({
         data: { avatar_url: publicUrl }
@@ -370,7 +375,7 @@ const ProfilePage = () => {
                   <form onSubmit={handleAvatarUpload} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="avatar">Profile Picture</Label>
-                      
+
                       <div className="flex gap-4 items-start">
                         {imagePreview && (
                           <div className="w-20 h-20 relative rounded-md overflow-hidden">
@@ -382,7 +387,7 @@ const ProfilePage = () => {
                             />
                           </div>
                         )}
-                        
+
                         <div>
                           <Label
                             htmlFor="avatar-upload"

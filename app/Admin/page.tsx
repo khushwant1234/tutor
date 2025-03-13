@@ -553,8 +553,8 @@ const AdminPage = () => {
         return;
       }
       
-      if (recurringDays.length === 0) {
-        setClassSchedulingError("Please select at least one day of the week");
+      if (timeSlots.length === 0) {
+        setClassSchedulingError("Please add at least one class time");
         return;
       }
       
@@ -563,32 +563,30 @@ const AdminPage = () => {
         return;
       }
       
-      if (timeSlots.length === 0) {
-        setClassSchedulingError("Please add at least one class time");
-        return;
-      }
+      console.log("Creating recurring schedule with:", {
+        courseId: selectedCourseId,
+        title: classTitle,
+        description: classDescription,
+        days: timeSlots.map(s => s.day),
+        startDate,
+        endDate,
+        duration,
+        timeSlots
+      });
       
-      // Check if the course_schedules table exists
-      const { error: tableError } = await supabase
-        .from('course_schedules')
-        .select('id')
-        .limit(1);
-        
-      if (tableError && tableError.message.includes("does not exist")) {
-        console.error("Table course_schedules does not exist:", tableError);
-        await createScheduleTables();
-      }
+      // First ensure tables exist
+      await createScheduleTables();
       
-      // First create the schedule
+      // Create the schedule
       const { data: scheduleData, error: scheduleError } = await supabase
         .from('course_schedules')
         .insert([{
           course_id: selectedCourseId,
           name: `${classTitle} Schedule`,
-          days_of_week: recurringDays,
+          days_of_week: timeSlots.map(slot => slot.day), // Use actual selected days from time slots
           start_date: startDate,
           end_date: endDate,
-          class_duration: duration // This is the field with the issue - ensure it's class_duration without spaces
+          class_duration: duration
         }])
         .select();
         
@@ -602,9 +600,11 @@ const AdminPage = () => {
       }
       
       const scheduleId = scheduleData[0].id;
+      console.log("Created schedule with ID:", scheduleId);
       
-      // Then add all time slots
+      // Add time slots
       for (const slot of timeSlots) {
+        console.log("Adding time slot:", slot);
         const { error: slotError } = await supabase
           .from('schedule_time_slots')
           .insert([{
@@ -615,22 +615,18 @@ const AdminPage = () => {
           
         if (slotError) {
           console.error("Error adding time slot:", slotError);
-          if (slotError.message.includes("does not exist")) {
-            await createScheduleTables();
-            throw new Error("Schedule tables were just created. Please try again.");
-          }
           throw slotError;
         }
       }
       
-      // For this demo, instead of using an RPC, let's manually create class instances
+      // Create class instances manually
       await createClassInstancesManually(
         scheduleId, 
         selectedCourseId, 
         classTitle, 
         classDescription, 
         meetingLink,
-        recurringDays,
+        timeSlots.map(slot => slot.day), // Use actual selected days from time slots
         new Date(startDate),
         new Date(endDate),
         duration,
@@ -654,7 +650,6 @@ const AdminPage = () => {
       setClassSchedulingError(err instanceof Error ? err.message : "Failed to create schedule");
     }
   };
-
   // Fetch courses in useEffect
   useEffect(() => {
     // Add this to your existing useEffect or create a new one
@@ -874,103 +869,142 @@ const fetchClassesForCourse = async (courseId: string) => {
     );
   }
   
-const createClassInstancesManually = async (
-  scheduleId: string,
-  courseId: string,
-  classTitle: string,
-  classDescription: string,
-  meetingLink: string,
-  daysOfWeek: number[],
-  startDate: Date,
-  endDate: Date,
-  duration: number,
-  timeSlots: {day: number, time: string}[]
-) => {
-  try {
-    // First create the parent course class
-    const { data: parentClass, error: parentClassError } = await supabase
-      .from('course_classes')
-      .insert([{
-        course_id: courseId,
-        title: classTitle,
-        description: classDescription,
-        start_time: startDate.toISOString(),
-        end_time: endDate.toISOString(),
-        recurring: true,
-        recurrence_pattern: daysOfWeek.join(','),
-        meeting_link: meetingLink
-      }])
-      .select();
+  const createClassInstancesManually = async (
+    scheduleId: string,
+    courseId: string,
+    classTitle: string,
+    classDescription: string,
+    meetingLink: string,
+    daysOfWeek: number[],
+    startDate: Date,
+    endDate: Date,
+    duration: number,
+    timeSlots: {day: number, time: string}[]
+  ) => {
+    try {
+      console.log("Creating class instances for schedule:", scheduleId);
+      console.log("Parameters:", {
+        courseId,
+        classTitle,
+        daysOfWeek,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        duration,
+        timeSlots
+      });
+  
+      // First create the parent course class
+      const { data: parentClass, error: parentClassError } = await supabase
+        .from('course_classes')
+        .insert([{
+          course_id: courseId,
+          title: classTitle,
+          description: classDescription,
+          start_time: startDate.toISOString(),
+          end_time: endDate.toISOString(),
+          recurring: true,
+          recurrence_pattern: daysOfWeek.join(','),
+          meeting_link: meetingLink
+        }])
+        .select();
+        
+      if (parentClassError) {
+        console.error("Error creating parent class:", parentClassError);
+        throw parentClassError;
+      }
       
-    if (parentClassError) throw parentClassError;
-    if (!parentClass || parentClass.length === 0) throw new Error("Failed to create parent class");
-    
-    const parentClassId = parentClass[0].id;
-    
-    // Loop through every day from start to end date
-    const instances = [];
-    const current = new Date(startDate);
-    current.setHours(0, 0, 0, 0);
-    
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999);
-    
-    // Create one instance for each day that matches the recurrence pattern
-    while (current <= end) {
-      const dayOfWeek = current.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      if (!parentClass || parentClass.length === 0) {
+        throw new Error("Failed to create parent class");
+      }
       
-      // If this day is in our recurrence pattern
-      if (daysOfWeek.includes(dayOfWeek)) {
+      const parentClassId = parentClass[0].id;
+      console.log("Created parent class with ID:", parentClassId);
+      
+      // Loop through every day from start to end date
+      const instances = [];
+      const current = new Date(startDate);
+      current.setHours(0, 0, 0, 0); 
+      
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      
+      console.log("Creating instances from", current, "to", end);
+      
+      // Create one instance for each day that matches our time slots
+      while (current <= end) {
+        const dayOfWeek = current.getDay(); // 0 = Sunday, 1 = Monday, etc.
+        
         // Get all time slots for this day
         const slotsForDay = timeSlots.filter(slot => slot.day === dayOfWeek);
         
-        // Create an instance for each time slot
-        for (const slot of slotsForDay) {
-          // Parse the time string (e.g., "14:30")
-          const [hours, minutes] = slot.time.split(':').map(Number);
+        if (slotsForDay.length > 0) {
+          console.log(`Found ${slotsForDay.length} slots for ${current.toDateString()} (day ${dayOfWeek})`);
           
-          // Create a new date for this instance
-          const instanceStart = new Date(current);
-          instanceStart.setHours(hours, minutes, 0, 0);
+          // Create an instance for each time slot
+          for (const slot of slotsForDay) {
+            // Parse the time string (e.g., "14:30")
+            const [hours, minutes] = slot.time.split(':').map(Number);
+            
+            // Create a new date for this instance
+            const instanceStart = new Date(current);
+            instanceStart.setHours(hours, minutes, 0, 0);
+            
+            // Calculate end time based on duration
+            const instanceEnd = new Date(instanceStart);
+            instanceEnd.setMinutes(instanceEnd.getMinutes() + duration);
+            
+            // Skip if the start time is in the past
+            if (instanceStart < new Date()) {
+              console.log("Skipping past instance:", instanceStart);
+              continue;
+            }
+            
+            // Add to instances array
+            instances.push({
+              class_id: parentClassId,
+              title: classTitle,
+              start_time: instanceStart.toISOString(),
+              end_time: instanceEnd.toISOString(),
+              meeting_link: meetingLink
+            });
+            
+            console.log("Added instance:", instanceStart.toISOString());
+          }
+        }
+        
+        // Move to next day
+        current.setDate(current.getDate() + 1);
+      }
+      
+      console.log(`Created ${instances.length} class instances to insert`);
+      
+      if (instances.length === 0) {
+        throw new Error("No class instances were created. Check your date range and time slots.");
+      }
+      
+      // Insert all instances in chunks to avoid request size limitations
+      const chunkSize = 50;
+      for (let i = 0; i < instances.length; i += chunkSize) {
+        const chunk = instances.slice(i, i + chunkSize);
+        console.log(`Inserting chunk ${i/chunkSize + 1} with ${chunk.length} instances`);
+        
+        const { error: insertError } = await supabase
+          .from('class_instances')
+          .insert(chunk);
           
-          // Calculate end time based on duration
-          const instanceEnd = new Date(instanceStart);
-          instanceEnd.setMinutes(instanceEnd.getMinutes() + duration);
-          
-          // Add to instances array
-          instances.push({
-            class_id: parentClassId,
-            title: classTitle,
-            start_time: instanceStart.toISOString(),
-            end_time: instanceEnd.toISOString(),
-            meeting_link: meetingLink
-          });
+        if (insertError) {
+          console.error("Error inserting class instances:", insertError);
+          throw insertError;
         }
       }
       
-      // Move to next day
-      current.setDate(current.getDate() + 1);
+      console.log("Successfully created all class instances");
+      return true;
+    } catch (err) {
+      console.error("Error creating class instances manually:", err);
+      throw err;
     }
-    
-    // Insert all instances in chunks to avoid request size limitations
-    const chunkSize = 50;
-    for (let i = 0; i < instances.length; i += chunkSize) {
-      const chunk = instances.slice(i, i + chunkSize);
-      
-      const { error: insertError } = await supabase
-        .from('class_instances')
-        .insert(chunk);
-        
-      if (insertError) throw insertError;
-    }
-    
-    return true;
-  } catch (err) {
-    console.error("Error creating class instances manually:", err);
-    throw err;
-  }
-};
-
+  };
 // Add this function to delete a single class instance
 const deleteClassInstance = async (classId: string) => {
   try {
@@ -1116,7 +1150,24 @@ const confirmDeleteClass = (classInstance: any) => {
   };
 };
 
-
+const createScheduleTables = async () => {
+  try {
+    console.log("Creating schedule tables if they don't exist...");
+    // Call the create_tables_if_not_exist RPC function
+    const { error } = await supabase.rpc('create_tables_if_not_exist');
+    
+    if (error) {
+      console.error("Error creating tables:", error);
+      return false;
+    }
+    
+    console.log("Tables created or already exist");
+    return true;
+  } catch (err) {
+    console.error("Error creating schedule tables:", err);
+    return false;
+  }
+};
   return (
     <div>
       <Navbar />
