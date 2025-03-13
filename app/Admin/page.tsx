@@ -874,6 +874,248 @@ const fetchClassesForCourse = async (courseId: string) => {
     );
   }
   
+const createClassInstancesManually = async (
+  scheduleId: string,
+  courseId: string,
+  classTitle: string,
+  classDescription: string,
+  meetingLink: string,
+  daysOfWeek: number[],
+  startDate: Date,
+  endDate: Date,
+  duration: number,
+  timeSlots: {day: number, time: string}[]
+) => {
+  try {
+    // First create the parent course class
+    const { data: parentClass, error: parentClassError } = await supabase
+      .from('course_classes')
+      .insert([{
+        course_id: courseId,
+        title: classTitle,
+        description: classDescription,
+        start_time: startDate.toISOString(),
+        end_time: endDate.toISOString(),
+        recurring: true,
+        recurrence_pattern: daysOfWeek.join(','),
+        meeting_link: meetingLink
+      }])
+      .select();
+      
+    if (parentClassError) throw parentClassError;
+    if (!parentClass || parentClass.length === 0) throw new Error("Failed to create parent class");
+    
+    const parentClassId = parentClass[0].id;
+    
+    // Loop through every day from start to end date
+    const instances = [];
+    const current = new Date(startDate);
+    current.setHours(0, 0, 0, 0);
+    
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+    
+    // Create one instance for each day that matches the recurrence pattern
+    while (current <= end) {
+      const dayOfWeek = current.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      
+      // If this day is in our recurrence pattern
+      if (daysOfWeek.includes(dayOfWeek)) {
+        // Get all time slots for this day
+        const slotsForDay = timeSlots.filter(slot => slot.day === dayOfWeek);
+        
+        // Create an instance for each time slot
+        for (const slot of slotsForDay) {
+          // Parse the time string (e.g., "14:30")
+          const [hours, minutes] = slot.time.split(':').map(Number);
+          
+          // Create a new date for this instance
+          const instanceStart = new Date(current);
+          instanceStart.setHours(hours, minutes, 0, 0);
+          
+          // Calculate end time based on duration
+          const instanceEnd = new Date(instanceStart);
+          instanceEnd.setMinutes(instanceEnd.getMinutes() + duration);
+          
+          // Add to instances array
+          instances.push({
+            class_id: parentClassId,
+            title: classTitle,
+            start_time: instanceStart.toISOString(),
+            end_time: instanceEnd.toISOString(),
+            meeting_link: meetingLink
+          });
+        }
+      }
+      
+      // Move to next day
+      current.setDate(current.getDate() + 1);
+    }
+    
+    // Insert all instances in chunks to avoid request size limitations
+    const chunkSize = 50;
+    for (let i = 0; i < instances.length; i += chunkSize) {
+      const chunk = instances.slice(i, i + chunkSize);
+      
+      const { error: insertError } = await supabase
+        .from('class_instances')
+        .insert(chunk);
+        
+      if (insertError) throw insertError;
+    }
+    
+    return true;
+  } catch (err) {
+    console.error("Error creating class instances manually:", err);
+    throw err;
+  }
+};
+
+// Add this function to delete a single class instance
+const deleteClassInstance = async (classId: string) => {
+  try {
+    console.log("Deleting class beeee instance:", classId);
+    setEditClassError("");
+    setEditClassSuccess(false);
+    setEditingClass(true);
+    
+    // Delete the class instance
+    const { error } = await supabase
+      .from('class_instances')
+      .delete()
+      .eq('id', classId);
+    console.log(error)
+
+    if (error) throw error;
+    
+    // Remove it from local state
+    setClassesForCourse(classes => classes.filter(c => c.id !== classId));
+    
+    setEditClassSuccess(true);
+    setTimeout(() => setEditClassSuccess(false), 3000);
+  } catch (err) {
+    console.error("Error deleting class:", err);
+    setEditClassError(err instanceof Error ? err.message : "Failed to delete class");
+  } finally {
+    setEditingClass(false);
+  }
+};
+
+// Add this function to delete all instances of a recurring class
+const deleteBulkClasses = async (parentClassId: string) => {
+  try {
+    setEditClassError("");
+    setEditClassSuccess(false);
+    setEditingClass(true);
+    
+    // First, get all future instances of this class
+    const now = new Date().toISOString();
+    
+    const { data: instances, error: instancesError } = await supabase
+      .from('class_instances')
+      .select('id')
+      .eq('class_id', parentClassId)
+      .gte('start_time', now);
+      
+    if (instancesError) throw instancesError;
+    
+    if (!instances || instances.length === 0) {
+      setEditClassError("No future instances found for this class");
+      setEditingClass(false);
+      return;
+    }
+    
+    // Delete all instances
+    const instanceIds = instances.map(i => i.id);
+    
+    // Delete in chunks if there are many instances
+    const chunkSize = 50;
+    for (let i = 0; i < instanceIds.length; i += chunkSize) {
+      const chunk = instanceIds.slice(i, i + chunkSize);
+      
+      const { error: deleteError } = await supabase
+        .from('class_instances')
+        .delete()
+        .in('id', chunk);
+        
+      if (deleteError) throw deleteError;
+    }
+    
+    // Refresh the class list
+    if (manageCourseId) {
+      fetchClassesForCourse(manageCourseId);
+    }
+    
+    setEditClassSuccess(true);
+    setTimeout(() => setEditClassSuccess(false), 3000);
+  } catch (err) {
+    console.error("Error deleting classes:", err);
+    setEditClassError(err instanceof Error ? err.message : "Failed to delete classes");
+  } finally {
+    setEditingClass(false);
+  }
+};
+
+// Add this function to show a confirmation dialog before deleting a class
+const confirmDeleteClass = (classInstance: any) => {
+  // Create modal for confirmation
+  console.log("Deleting class:", classInstance);
+  const dialog = document.createElement('div');
+  dialog.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
+  
+  const content = document.createElement('div');
+  content.className = 'bg-white rounded-lg p-6 max-w-md w-full mx-4';
+  
+  const startDate = new Date(classInstance.start_time);
+  const formattedDate = startDate.toLocaleDateString();
+  const formattedTime = startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  
+  content.innerHTML = `
+    <h3 class="text-lg font-medium mb-2">Delete Class</h3>
+    <p class="text-sm text-gray-500 mb-4">Are you sure you want to delete this class?</p>
+    
+    <div class="bg-gray-50 p-4 rounded-md mb-4">
+      <div class="font-medium">${classInstance.title}</div>
+      <div class="text-sm text-gray-500">${formattedDate} at ${formattedTime}</div>
+    </div>
+    
+    <div class="bg-yellow-50 p-3 mb-4 rounded border border-yellow-300 text-yellow-800 text-sm">
+      <strong>Warning:</strong> This action cannot be undone.
+    </div>
+  `;
+  
+  const buttonContainer = document.createElement('div');
+  buttonContainer.className = 'flex justify-end space-x-2 mt-4';
+  
+  const cancelButton = document.createElement('button');
+  cancelButton.className = 'px-4 py-2 border rounded text-gray-700 bg-white hover:bg-gray-50';
+  cancelButton.textContent = 'Cancel';
+  cancelButton.onclick = () => document.body.removeChild(dialog);
+  
+  const confirmButton = document.createElement('button');
+  confirmButton.className = 'px-4 py-2 rounded text-white bg-red-600 hover:bg-red-700';
+  confirmButton.textContent = 'Delete Class';
+  confirmButton.onclick = () => {
+    console.log("Deleting class confirned instance:", classInstance);
+    deleteClassInstance(classInstance.id);
+    document.body.removeChild(dialog);
+  };
+  
+  buttonContainer.appendChild(cancelButton);
+  buttonContainer.appendChild(confirmButton);
+  content.appendChild(buttonContainer);
+  
+  dialog.appendChild(content);
+  document.body.appendChild(dialog);
+  
+  // Make the dialog dismissable by clicking outside
+  dialog.onclick = (e) => {
+    if (e.target === dialog) {
+      document.body.removeChild(dialog);
+    }
+  };
+};
+
 
   return (
     <div>
@@ -1826,244 +2068,7 @@ const fetchClassesForCourse = async (courseId: string) => {
       )}
     </div>
   );
-};
-
-const createClassInstancesManually = async (
-  scheduleId: string,
-  courseId: string,
-  classTitle: string,
-  classDescription: string,
-  meetingLink: string,
-  daysOfWeek: number[],
-  startDate: Date,
-  endDate: Date,
-  duration: number,
-  timeSlots: {day: number, time: string}[]
-) => {
-  try {
-    // First create the parent course class
-    const { data: parentClass, error: parentClassError } = await supabase
-      .from('course_classes')
-      .insert([{
-        course_id: courseId,
-        title: classTitle,
-        description: classDescription,
-        start_time: startDate.toISOString(),
-        end_time: endDate.toISOString(),
-        recurring: true,
-        recurrence_pattern: daysOfWeek.join(','),
-        meeting_link: meetingLink
-      }])
-      .select();
-      
-    if (parentClassError) throw parentClassError;
-    if (!parentClass || parentClass.length === 0) throw new Error("Failed to create parent class");
-    
-    const parentClassId = parentClass[0].id;
-    
-    // Loop through every day from start to end date
-    const instances = [];
-    const current = new Date(startDate);
-    current.setHours(0, 0, 0, 0);
-    
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999);
-    
-    // Create one instance for each day that matches the recurrence pattern
-    while (current <= end) {
-      const dayOfWeek = current.getDay(); // 0 = Sunday, 1 = Monday, etc.
-      
-      // If this day is in our recurrence pattern
-      if (daysOfWeek.includes(dayOfWeek)) {
-        // Get all time slots for this day
-        const slotsForDay = timeSlots.filter(slot => slot.day === dayOfWeek);
-        
-        // Create an instance for each time slot
-        for (const slot of slotsForDay) {
-          // Parse the time string (e.g., "14:30")
-          const [hours, minutes] = slot.time.split(':').map(Number);
-          
-          // Create a new date for this instance
-          const instanceStart = new Date(current);
-          instanceStart.setHours(hours, minutes, 0, 0);
-          
-          // Calculate end time based on duration
-          const instanceEnd = new Date(instanceStart);
-          instanceEnd.setMinutes(instanceEnd.getMinutes() + duration);
-          
-          // Add to instances array
-          instances.push({
-            class_id: parentClassId,
-            title: classTitle,
-            start_time: instanceStart.toISOString(),
-            end_time: instanceEnd.toISOString(),
-            meeting_link: meetingLink
-          });
-        }
-      }
-      
-      // Move to next day
-      current.setDate(current.getDate() + 1);
-    }
-    
-    // Insert all instances in chunks to avoid request size limitations
-    const chunkSize = 50;
-    for (let i = 0; i < instances.length; i += chunkSize) {
-      const chunk = instances.slice(i, i + chunkSize);
-      
-      const { error: insertError } = await supabase
-        .from('class_instances')
-        .insert(chunk);
-        
-      if (insertError) throw insertError;
-    }
-    
-    return true;
-  } catch (err) {
-    console.error("Error creating class instances manually:", err);
-    throw err;
-  }
-};
-
-// Add this function to delete a single class instance
-const deleteClassInstance = async (classId: string) => {
-  try {
-    setEditClassError("");
-    setEditClassSuccess(false);
-    setEditingClass(true);
-    
-    // Delete the class instance
-    const { error } = await supabase
-      .from('class_instances')
-      .delete()
-      .eq('id', classId);
-      
-    if (error) throw error;
-    
-    // Remove it from local state
-    setClassesForCourse(classes => classes.filter(c => c.id !== classId));
-    
-    setEditClassSuccess(true);
-    setTimeout(() => setEditClassSuccess(false), 3000);
-  } catch (err) {
-    console.error("Error deleting class:", err);
-    setEditClassError(err instanceof Error ? err.message : "Failed to delete class");
-  } finally {
-    setEditingClass(false);
-  }
-};
-
-// Add this function to delete all instances of a recurring class
-const deleteBulkClasses = async (parentClassId: string) => {
-  try {
-    setEditClassError("");
-    setEditClassSuccess(false);
-    setEditingClass(true);
-    
-    // First, get all future instances of this class
-    const now = new Date().toISOString();
-    
-    const { data: instances, error: instancesError } = await supabase
-      .from('class_instances')
-      .select('id')
-      .eq('class_id', parentClassId)
-      .gte('start_time', now);
-      
-    if (instancesError) throw instancesError;
-    
-    if (!instances || instances.length === 0) {
-      setEditClassError("No future instances found for this class");
-      setEditingClass(false);
-      return;
-    }
-    
-    // Delete all instances
-    const instanceIds = instances.map(i => i.id);
-    
-    // Delete in chunks if there are many instances
-    const chunkSize = 50;
-    for (let i = 0; i < instanceIds.length; i += chunkSize) {
-      const chunk = instanceIds.slice(i, i + chunkSize);
-      
-      const { error: deleteError } = await supabase
-        .from('class_instances')
-        .delete()
-        .in('id', chunk);
-        
-      if (deleteError) throw deleteError;
-    }
-    
-    // Refresh the class list
-    if (manageCourseId) {
-      fetchClassesForCourse(manageCourseId);
-    }
-    
-    setEditClassSuccess(true);
-    setTimeout(() => setEditClassSuccess(false), 3000);
-  } catch (err) {
-    console.error("Error deleting classes:", err);
-    setEditClassError(err instanceof Error ? err.message : "Failed to delete classes");
-  } finally {
-    setEditingClass(false);
-  }
-};
-
-// Add this function to show a confirmation dialog before deleting a class
-const confirmDeleteClass = (classInstance: any) => {
-  // Create modal for confirmation
-  const dialog = document.createElement('div');
-  dialog.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
   
-  const content = document.createElement('div');
-  content.className = 'bg-white rounded-lg p-6 max-w-md w-full mx-4';
-  
-  const startDate = new Date(classInstance.start_time);
-  const formattedDate = startDate.toLocaleDateString();
-  const formattedTime = startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  
-  content.innerHTML = `
-    <h3 class="text-lg font-medium mb-2">Delete Class</h3>
-    <p class="text-sm text-gray-500 mb-4">Are you sure you want to delete this class?</p>
-    
-    <div class="bg-gray-50 p-4 rounded-md mb-4">
-      <div class="font-medium">${classInstance.title}</div>
-      <div class="text-sm text-gray-500">${formattedDate} at ${formattedTime}</div>
-    </div>
-    
-    <div class="bg-yellow-50 p-3 mb-4 rounded border border-yellow-300 text-yellow-800 text-sm">
-      <strong>Warning:</strong> This action cannot be undone.
-    </div>
-  `;
-  
-  const buttonContainer = document.createElement('div');
-  buttonContainer.className = 'flex justify-end space-x-2 mt-4';
-  
-  const cancelButton = document.createElement('button');
-  cancelButton.className = 'px-4 py-2 border rounded text-gray-700 bg-white hover:bg-gray-50';
-  cancelButton.textContent = 'Cancel';
-  cancelButton.onclick = () => document.body.removeChild(dialog);
-  
-  const confirmButton = document.createElement('button');
-  confirmButton.className = 'px-4 py-2 rounded text-white bg-red-600 hover:bg-red-700';
-  confirmButton.textContent = 'Delete Class';
-  confirmButton.onclick = () => {
-    deleteClassInstance(classInstance.id);
-    document.body.removeChild(dialog);
-  };
-  
-  buttonContainer.appendChild(cancelButton);
-  buttonContainer.appendChild(confirmButton);
-  content.appendChild(buttonContainer);
-  
-  dialog.appendChild(content);
-  document.body.appendChild(dialog);
-  
-  // Make the dialog dismissable by clicking outside
-  dialog.onclick = (e) => {
-    if (e.target === dialog) {
-      document.body.removeChild(dialog);
-    }
-  };
 };
 
 export default AdminPage;
