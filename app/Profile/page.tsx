@@ -89,7 +89,7 @@ const ProfilePage = () => {
         
       } catch (err) {
         console.error("Error loading profile:", err);
-        router.push("/login");
+        router.push("/Login");
       } finally {
         setLoading(false);
       }
@@ -262,6 +262,21 @@ const ProfilePage = () => {
       setAvatarError(err instanceof Error ? err.message : "Failed to update avatar");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // Add this function to handle logout
+  const handleLogout = async () => {
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      router.push('/Login');
+    } catch (err) {
+      console.error("Error signing out:", err);
+      setError("Failed to sign out. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -515,6 +530,23 @@ const ProfilePage = () => {
             </Card>
           </TabsContent>
         </Tabs>
+      </div>
+      <div className="container mx-auto py-6 px-4 text-center">
+        <Button 
+          variant="outline" 
+          className="text-red-600 border-red-200 hover:bg-red-50"
+          onClick={handleLogout}
+          disabled={loading}
+        >
+          {loading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Logging out...
+            </>
+          ) : (
+            'Sign Out'
+          )}
+        </Button>
       </div>
       <Footer />
     </div>

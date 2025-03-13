@@ -101,9 +101,9 @@ const Navbar = () => {
             .select('role')
             .eq('user_id', session.user.id)
             .maybeSingle();
-            
+
           if (!error) {
-            setIsAdmin(data && data.role === 'admin');
+            setIsAdmin(data?.role === 'admin' || false);
           }
         } catch (err) {
           console.error("Error checking admin on login:", err);
@@ -161,9 +161,6 @@ const Navbar = () => {
               <DropdownMenuGroup>
                 <DropdownMenuItem onClick={() => router.push('/Profile')}>
                   Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push('/settings')}>
-                  Settings
                 </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />

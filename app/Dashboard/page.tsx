@@ -335,7 +335,7 @@ const Dashboard = () => {
               {upcomingClasses.length > 0 && (
                 <CardFooter className="border-t pt-4">
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     className="w-full text-blue-600"
                     onClick={() => alert("Calendar view coming soon!")}
                   >
@@ -369,9 +369,9 @@ const Dashboard = () => {
                     </Button>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-4 space-x-1">
                     {enrolledCourses.slice(0, 3).map((course) => (
-                      <Link href={`/courses/${course.id}`} key={course.id}>
+                      <Link href={`/Courses/${course.id}`} key={course.id}>
                         <div className="flex items-center p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition cursor-pointer">
                           {course.image_url ? (
                             <div className="relative w-12 h-12 rounded overflow-hidden mr-3">
@@ -408,7 +408,7 @@ const Dashboard = () => {
               {enrolledCourses.length > 3 && (
                 <CardFooter className="border-t pt-4">
                   <Link href="/MyCourses" className="w-full">
-                    <Button variant="ghost" className="w-full text-blue-600">
+                    <Button variant="outline" className="w-full text-blue-600">
                       See All Courses
                       <ChevronRight className="h-4 w-4 ml-1" />
                     </Button>
