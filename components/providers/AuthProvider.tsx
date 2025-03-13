@@ -1,0 +1,92 @@
+"use client";
+import { createContext, useContext, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import supabase from "@/utils/supabase/client";
+
+type AuthContextType = {
+  user: any | null;
+  isLoading: boolean;
+  isAdmin: boolean;
+  refresh: () => Promise<void>;
+};
+
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  isLoading: true,
+  isAdmin: false,
+  refresh: async () => {},
+});
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<any | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const router = useRouter();
+
+  const checkUserRole = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) throw error;
+      return data?.role === 'admin';
+    } catch (error) {
+      console.error("Error checking admin role:", error);
+      return false;
+    }
+  };
+
+  const refresh = async () => {
+    try {
+      setIsLoading(true);
+      const { data } = await supabase.auth.getUser();
+      
+      if (data.user) {
+        setUser(data.user);
+        const adminStatus = await checkUserRole(data.user.id);
+        setIsAdmin(adminStatus);
+      } else {
+        setUser(null);
+        setIsAdmin(false);
+      }
+    } catch (error) {
+      console.error("Auth refresh error:", error);
+      setUser(null);
+      setIsAdmin(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    refresh();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === "SIGNED_IN" && session) {
+          setUser(session.user);
+          const adminStatus = await checkUserRole(session.user.id);
+          setIsAdmin(adminStatus);
+        } else if (event === "SIGNED_OUT") {
+          setUser(null);
+          setIsAdmin(false);
+        }
+      }
+    );
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  return (
+    <AuthContext.Provider value={{ user, isLoading, isAdmin, refresh }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export const useAuth = () => useContext(AuthContext);
