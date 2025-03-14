@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import Pages from "@/components/navbar/Pages";
 import PagesPhone from "../navbar/PagesPhone";
@@ -20,6 +20,7 @@ import supabase from "@/utils/supabase/client";
 const Navbar = () => {
   const { user, isAdmin } = useAuth();
   const router = useRouter();
+  const [avatarUrl, setAvatarUrl] = React.useState<string | undefined>(undefined);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -33,7 +34,12 @@ const Navbar = () => {
       .join('')
       .toUpperCase() || 'U';
   };
-
+  useEffect(() => {
+    if (user) {
+      setAvatarUrl(user.user_metadata?.image_url || user.user_metadata?.avatar_url || undefined);
+      console.log(avatarUrl);
+    }
+  }, [user]);
   return (
     <nav className="bg-blue-700 text-white">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -46,21 +52,23 @@ const Navbar = () => {
         />
         
         <PagesPhone isLoggedIn={!!user} isAdmin={isAdmin} />
-        
+
         {user && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                 <Avatar>
-                  <AvatarImage src={user.user_metadata?.image_url || user.user_metadata?.avatar_url} />
-                  <AvatarFallback>{getInitials(user?.user_metadata?.full_name)}</AvatarFallback>
+                  <AvatarImage src={avatarUrl} />
+                  <AvatarFallback className="bg-gray-200 text-gray-700">
+                    {getInitials(user?.user_metadata?.full_name)}
+                  </AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{user?.user_metadata?.full_name || user?.user_metadata?.display_name}</p>
+                  <p className="text-sm font-medium leading-none">{user?.user_metadata?.displayName || user?.user_metadata?.full_name}</p>
                   <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
                 </div>
               </DropdownMenuLabel>

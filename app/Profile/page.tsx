@@ -110,9 +110,9 @@ const ProfilePage = () => {
       }
       
       const { error } = await supabase.auth.updateUser({
-        data: { full_name: displayName }
+        data: { displayName: displayName }
       });
-      
+
       if (error) throw error;
       
       setNameSuccess(true);

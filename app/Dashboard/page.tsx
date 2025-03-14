@@ -101,6 +101,114 @@ const Dashboard = () => {
     );
   };
 
+  const refreshDashboardData = async () => {
+    setLoading(true);
+    setError("");
+    
+    try {
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        throw new Error("Please log in to view your dashboard");
+      }
+      
+      // Get enrolled courses
+      const { data: enrollmentData, error: enrollmentError } = await supabase
+        .from("user_data")
+        .select("course_id")
+        .eq("user_id", user.id);
+        
+      if (enrollmentError) throw enrollmentError;
+      
+      if (!enrollmentData || enrollmentData.length === 0) {
+        setEnrolledCourses([]);
+        setUpcomingClasses([]);
+        return;
+      }
+      
+      const courseIds = enrollmentData.map(item => item.course_id);
+      
+      // Get course data
+      const { data: courseData, error: courseError } = await supabase
+        .from("courses")
+        .select("*")
+        .in("id", courseIds);
+        
+      if (courseError) throw courseError;
+      setEnrolledCourses(courseData || []);
+      
+      // Get upcoming classes for these courses
+      const now = new Date().toISOString();
+      const nextWeek = new Date();
+      nextWeek.setDate(nextWeek.getDate() + 7);
+      
+      console.log("Fetching classes for course IDs:", courseIds);
+      
+      const { data: classData, error: classError } = await supabase
+        .from("class_instances")
+        .select(`
+          id,
+          title,
+          start_time,
+          end_time,
+          meeting_link,
+          status,
+          course_classes(course_id)
+        `)
+        .gte("start_time", now)
+        .lte("start_time", nextWeek.toISOString())
+        .in("course_classes.course_id", courseIds)
+        .order("start_time", { ascending: true });
+        
+      if (classError) {
+        console.error("Error fetching classes:", classError);
+        throw classError;
+      }
+      
+      console.log("Class data received:", classData);
+      
+      if (classData && classData.length > 0) {
+        const upcoming = classData.filter(cls => cls.course_classes).map(cls => {
+          const startDate = new Date(cls.start_time);
+          const endDate = new Date(cls.end_time);
+          const durationMins = Math.round((endDate.getTime() - startDate.getTime()) / 60000);
+          
+          // Add null check for course_classes
+          const courseId = cls.course_classes?.course_id;
+          if (!courseId) {
+            console.log("Missing course_id for class:", cls.id);
+          }
+          
+          const course = courseData.find(c => c.id === courseId);
+          
+          return {
+            id: cls.id,
+            title: cls.title,
+            date: startDate.toLocaleDateString(),
+            time: startDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            duration: durationMins,
+            course_id: courseId || "unknown",  // Provide fallback
+            course_title: course?.title || "Unknown Course",
+            meeting_link: cls.meeting_link,
+            status: cls.status
+          };
+        }).filter(item => item.course_id !== "unknown");  // Filter out items with unknown course_id
+        
+        console.log("Upcoming classes processed:", upcoming);
+        setUpcomingClasses(upcoming);
+      } else {
+        console.log("No upcoming classes found");
+        setUpcomingClasses([]);
+      }
+    } catch (err) {
+      console.error("Error refreshing dashboard data:", err);
+      setError(err instanceof Error ? err.message : "Failed to load dashboard data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     async function fetchUserData() {
       try {
@@ -212,6 +320,10 @@ const Dashboard = () => {
     fetchUserData();
   }, [router]);
 
+  useEffect(() => {
+    refreshDashboardData();
+  }, []);
+
   const getWelcomeMessage = () => {
     const hour = new Date().getHours();
     const name =
@@ -268,7 +380,17 @@ const Dashboard = () => {
             </p>
           </div>
 
-          <div className="mt-4 md:mt-0">
+          <div className="mt-4 md:mt-0 flex space-x-2">
+            <Button 
+              variant="outline" 
+              onClick={refreshDashboardData}
+              className="flex items-center"
+            >
+              <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Refresh
+            </Button>
             <Link href="/Courses">
               <Button className="bg-blue-600 hover:bg-blue-700">
                 Browse All Courses
