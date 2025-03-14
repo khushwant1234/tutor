@@ -79,17 +79,17 @@ const ProfilePage = () => {
                          "email";
         
         setIsOAuthUser(provider !== "email");
-        
+
         // Set initial form values
-        setDisplayName(user.user_metadata?.name || 
+        setDisplayName(user.user_metadata?.displayName || 
                        user.user_metadata?.full_name || 
                        "");
-        
-        setAvatarUrl(user.user_metadata?.avatar_url || "");
+
+        setAvatarUrl(user.user_metadata?.image_url || user.user_metadata?.avatar_url || "");
         
       } catch (err) {
         console.error("Error loading profile:", err);
-        router.push("/login");
+        router.push("/Login");
       } finally {
         setLoading(false);
       }
@@ -110,9 +110,9 @@ const ProfilePage = () => {
       }
       
       const { error } = await supabase.auth.updateUser({
-        data: { name: displayName }
+        data: { displayName: displayName }
       });
-      
+
       if (error) throw error;
       
       setNameSuccess(true);
@@ -233,23 +233,28 @@ const ProfilePage = () => {
         console.error("Upload error details:", uploadError);
         throw uploadError;
       }
-      
+
       console.log("Upload successful:", uploadData);
-      
-      // Get the public URL
+      console.log("Public URL:", uploadData.path);
+      console.log("BUHAH:", filePath);
+      interface UploadImageResponse {
+        publicUrl: string | null;
+      }
+
       const { data } = supabase.storage
         .from('profile-images')
         .getPublicUrl(filePath);
-      
+
       const publicUrl = data.publicUrl;
-      
+      console.log(data);
+      console.log("Public URL:", publicUrl);
       // Update user metadata
       const { error: updateError } = await supabase.auth.updateUser({
-        data: { avatar_url: publicUrl }
+        data: { image_url: publicUrl }
       });
-      
+
       if (updateError) throw updateError;
-      
+
       setAvatarUrl(publicUrl);
       setAvatarSuccess(true);
     } catch (err) {
@@ -257,6 +262,21 @@ const ProfilePage = () => {
       setAvatarError(err instanceof Error ? err.message : "Failed to update avatar");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // Add this function to handle logout
+  const handleLogout = async () => {
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      router.push('/Login');
+    } catch (err) {
+      console.error("Error signing out:", err);
+      setError("Failed to sign out. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -370,7 +390,7 @@ const ProfilePage = () => {
                   <form onSubmit={handleAvatarUpload} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="avatar">Profile Picture</Label>
-                      
+
                       <div className="flex gap-4 items-start">
                         {imagePreview && (
                           <div className="w-20 h-20 relative rounded-md overflow-hidden">
@@ -382,7 +402,7 @@ const ProfilePage = () => {
                             />
                           </div>
                         )}
-                        
+
                         <div>
                           <Label
                             htmlFor="avatar-upload"
@@ -510,6 +530,23 @@ const ProfilePage = () => {
             </Card>
           </TabsContent>
         </Tabs>
+      </div>
+      <div className="container mx-auto py-6 px-4 text-center">
+        <Button 
+          variant="outline" 
+          className="text-red-600 border-red-200 hover:bg-red-50"
+          onClick={handleLogout}
+          disabled={loading}
+        >
+          {loading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Logging out...
+            </>
+          ) : (
+            'Sign Out'
+          )}
+        </Button>
       </div>
       <Footer />
     </div>

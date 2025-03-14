@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Navbar from "@/components/home/Navbar";
 import Footer from "@/components/footer/Footer";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ interface UserData {
 
 export default function CourseDetails() {
   const params = useParams();
+  const router = useRouter();
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
@@ -90,6 +91,16 @@ export default function CourseDetails() {
         
       if (error) throw error;
       setIsEnrolled(true);
+      
+      // Add this - show success message before redirecting
+      alert("Successfully enrolled! Redirecting to dashboard...");
+      
+      // Redirect to dashboard to see updated classes
+      setTimeout(() => {
+        router.push('/Dashboard');
+        // Force a refresh of the page to ensure data is reloaded
+        router.refresh();
+      }, 1500);
       
     } catch (err: unknown) {
       console.error("Error enrolling in course:", err);
