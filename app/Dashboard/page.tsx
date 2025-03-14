@@ -327,8 +327,8 @@ const Dashboard = () => {
   const getWelcomeMessage = () => {
     const hour = new Date().getHours();
     const name =
-    user?.user_metadata?.displayName || 
-    user?.user_metadata?.full_name || 
+      user?.user_metadata?.name ||
+      user?.user_metadata?.full_name ||
       "there";
 
     if (hour < 12) return `Good morning, ${name}`;
