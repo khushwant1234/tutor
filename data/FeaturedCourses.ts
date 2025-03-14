@@ -1,22 +1,7 @@
-export const courseInfo = [
-    {
-      title: "Course 1",
-      desc: "Description of Course 1. Literally the description",
-    },
-    {
-      title: "Course 2",
-      desc: "Description of Course 2. Literally the description, but for course 2 ",
-    },
-    {
-      title: "Course 3",
-      desc: "Description of Course 4. Literally course 4 here",
-    },
-    {
-      title: "Course 5",
-      desc: "Description of Course 6. Hell Nah Man, this the description for course 5 ",
-    },
-    {
-      title: "Course 6",
-      desc: "Description of Course 6. Not even a flagship course",
-    },
-  ];
+export const courseInfo: { title: string; desc: string; image?: string; slug?: string }[] = [
+  { title: "Course 1", desc: "Description 1", image: "/Images/course-1.jpg", slug: "course-1" },
+  { title: "Course 2", desc: "Description 2", image: "/Images/course-2.jpg", slug: "course-2" },
+  { title: "Course 3", desc: "Description 3", image: "/Images/course-3.jpg", slug: "course-3" },
+  { title: "Course 4", desc: "Description 4", image: "/Images/course-4.jpg", slug: "course-4" },
+  { title: "Course 5", desc: "Description 5", image: "/Images/course-5.jpg", slug: "course-5" },
+];

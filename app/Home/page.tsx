@@ -7,15 +7,20 @@ import FeaturedCourses from "@/components/home/FeaturedCourses";
 
 export default function Home() {
   return (
-    <div>
-      <Navbar></Navbar>
-      <Hero></Hero>
-      <FeaturedCourses></FeaturedCourses>
-      {/* <div className="flex justify-center my-5">
-        <LoginForm></LoginForm>
-      </div> */}
-      <ContactForm2 className=""></ContactForm2>
-      <Footer></Footer>
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+      <main className="flex-grow">
+        <Hero />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <FeaturedCourses />
+        </div>
+        <section className="bg-gradient-to-b from-white to-blue-50 py-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <ContactForm2 className="shadow-2xl" />
+          </div>
+        </section>
+      </main>
+      <Footer />
     </div>
   );
 }
