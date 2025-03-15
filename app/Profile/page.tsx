@@ -23,6 +23,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import supabase from "@/utils/supabase/client";
+import { useAuth } from "@/components/providers/AuthProvider";
 
 interface UserProfile {
   id: string;
@@ -40,7 +41,7 @@ interface UserProfile {
 
 const ProfilePage = () => {
   const router = useRouter();
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const { user, isLoading, refreshUserData } = useAuth();
   const [loading, setLoading] = useState(true);
   const [displayName, setDisplayName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
@@ -58,7 +59,7 @@ const ProfilePage = () => {
   const [avatarError, setAvatarError] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isOAuthUser, setIsOAuthUser] = useState(false);
-
+  const [userProfile, setUser] = useState<UserProfile | null>(null);
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
@@ -81,7 +82,7 @@ const ProfilePage = () => {
         setIsOAuthUser(provider !== "email");
 
         // Set initial form values
-        setDisplayName(user.user_metadata?.displayName || 
+        setDisplayName(user?.user_metadata?.display_name || 
                        user.user_metadata?.full_name || 
                        "");
 
@@ -110,12 +111,17 @@ const ProfilePage = () => {
       }
       
       const { error } = await supabase.auth.updateUser({
-        data: { displayName: displayName }
+        data: { display_name: displayName }
       });
 
       if (error) throw error;
       
       setNameSuccess(true);
+      
+      // Add this line to refresh user data in auth context
+      if (refreshUserData) {
+        await refreshUserData();
+      }
     } catch (err) {
       console.error("Error updating name:", err);
       setNameError(err instanceof Error ? err.message : "Failed to update name");
@@ -257,6 +263,11 @@ const ProfilePage = () => {
 
       setAvatarUrl(publicUrl);
       setAvatarSuccess(true);
+      
+      // Add this line
+      if (refreshUserData) {
+        await refreshUserData();
+      }
     } catch (err) {
       console.error("Error updating avatar:", err);
       setAvatarError(err instanceof Error ? err.message : "Failed to update avatar");

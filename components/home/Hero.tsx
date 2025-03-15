@@ -84,7 +84,7 @@ const Hero = () => {
         {/* CTA Buttons */}
         <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
           <motion.a
-            href="/courses"
+            href="/Courses"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="px-8 py-3 bg-cyan-500 text-white font-medium rounded-lg shadow-lg hover:bg-cyan-600 transition-all"
@@ -92,7 +92,7 @@ const Hero = () => {
             Explore Courses
           </motion.a>
           <motion.a
-            href="/signup"
+            href="/Register"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="px-8 py-3 bg-transparent text-white border-2 border-white font-medium rounded-lg hover:bg-white/10 transition-all"
