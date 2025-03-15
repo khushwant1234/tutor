@@ -8,6 +8,7 @@ type AuthContextType = {
   isLoading: boolean;
   isAdmin: boolean;
   refresh: () => Promise<void>;
+  refreshUserData: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -15,6 +16,7 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   isAdmin: false,
   refresh: async () => {},
+  refreshUserData: async () => {},
 });
 
 // Pages that require authentication
@@ -67,6 +69,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Add this function to refresh user data
+  const refreshUserData = async () => {
+    if (!user) return;
+    
+    const { data, error } = await supabase.auth.getUser();
+    if (!error && data.user) {
+      setUser(data.user);
+    }
+  };
+
   // Check routes for auth/admin requirements
   useEffect(() => {
     if (isLoading) return;
@@ -104,8 +116,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Add this function to the context value
+  const contextValue = {
+    user,
+    isLoading,
+    isAdmin,
+    refresh,
+    refreshUserData,  // Add this to context
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, isAdmin, refresh }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

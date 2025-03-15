@@ -327,7 +327,7 @@ const Dashboard = () => {
   const getWelcomeMessage = () => {
     const hour = new Date().getHours();
     const name =
-      user?.user_metadata?.name ||
+      user?.user_metadata?.display_name ||
       user?.user_metadata?.full_name ||
       "there";
 
