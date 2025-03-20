@@ -27,6 +27,13 @@ import {
 import { X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
+// Add this type definition at the top of your component
+type RecurringClass = {
+  id: string;
+  title: string;
+  count: number;
+};
+
 const AdminPage = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -400,6 +407,11 @@ const AdminPage = () => {
  
   // Add this to AdminPage component
   const [selectedCourseId, setSelectedCourseId] = useState("");
+  type Course = {
+    id: string;
+    title: string;
+  };
+
   const [courses, setCourses] = useState<Course[]>([]);
   const [scheduleType, setScheduleType] = useState<"one-time" | "recurring">("one-time");
   const [classTitle, setClassTitle] = useState("");
@@ -1822,7 +1834,7 @@ const createScheduleTables = async () => {
                       variant="secondary"
                       onClick={() => {
                         // Group classes by parent class_id to show recurring classes
-                        const parentClasses = classesForCourse.reduce((acc, cls) => {
+                        const parentClasses: Record<string, RecurringClass> = classesForCourse.reduce((acc, cls) => {
                           if (cls.recurring) {
                             if (!acc[cls.class_id]) {
                               acc[cls.class_id] = {
@@ -1835,10 +1847,10 @@ const createScheduleTables = async () => {
                             }
                           }
                           return acc;
-                        }, {});
+                        }, {} as Record<string, RecurringClass>);
                         
                         // If there are recurring classes, show a modal to select which one to bulk update
-                        const recurringClasses = Object.values(parentClasses);
+                        const recurringClasses: RecurringClass[] = Object.values(parentClasses);
                         
                         if (recurringClasses.length === 0) {
                           alert("No recurring classes found for this course.");
@@ -1850,7 +1862,7 @@ const createScheduleTables = async () => {
                         select.id = 'recurringClassSelect';
                         select.className = 'p-2 border rounded w-full mb-4';
                         
-                        recurringClasses.forEach((cls: any) => {
+                        recurringClasses.forEach((cls: RecurringClass) => {
                           const option = document.createElement('option');
                           option.value = cls.id;
                           option.textContent = `${cls.title} (${cls.count} classes)`;
@@ -1882,7 +1894,7 @@ const createScheduleTables = async () => {
                         confirmButton.textContent = 'Continue';
                         confirmButton.onclick = () => {
                           const selectedClassId = select.value;
-                          const selectedClass = recurringClasses.find((c: any) => c.id === selectedClassId);
+                          const selectedClass = recurringClasses.find((c: RecurringClass) => c.id === selectedClassId);
                           
                           if (selectedClass) {
                             setBulkUpdateClassId(selectedClassId);
@@ -1916,7 +1928,7 @@ const createScheduleTables = async () => {
                       variant="destructive"
                       onClick={() => {
                         // Group classes by parent class_id to show recurring classes
-                        const parentClasses = classesForCourse.reduce((acc, cls) => {
+                        const parentClasses: Record<string, RecurringClass> = classesForCourse.reduce((acc, cls) => {
                           if (cls.recurring) {
                             if (!acc[cls.class_id]) {
                               acc[cls.class_id] = {
@@ -1929,10 +1941,10 @@ const createScheduleTables = async () => {
                             }
                           }
                           return acc;
-                        }, {});
+                        }, {} as Record<string, RecurringClass>);
                         
                         // If there are recurring classes, show a modal to select which one to bulk update
-                        const recurringClasses = Object.values(parentClasses);
+                        const recurringClasses: RecurringClass[] = Object.values(parentClasses);
                         
                         if (recurringClasses.length === 0) {
                           alert("No recurring classes found for this course.");
@@ -1944,7 +1956,7 @@ const createScheduleTables = async () => {
                         select.id = 'deleteRecurringClassSelect';
                         select.className = 'p-2 border rounded w-full mb-4';
                         
-                        recurringClasses.forEach((cls: any) => {
+                        recurringClasses.forEach((cls: RecurringClass) => {
                           const option = document.createElement('option');
                           option.value = cls.id;
                           option.textContent = `${cls.title} (${cls.count} classes)`;
