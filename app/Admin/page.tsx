@@ -25,6 +25,8 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+
 const AdminPage = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -38,6 +40,9 @@ const AdminPage = () => {
   const [instructor, setInstructor] = useState("");
   const [previewUrl, setPreviewUrl] = useState("");
   const [otherInfo, setOtherInfo] = useState("");
+  const [price, setPrice] = useState<number | string>("");
+  const [isFree, setIsFree] = useState(true);
+  const [currency, setCurrency] = useState("INR");
   
   // Admin user form state
   const [adminEmail, setAdminEmail] = useState("");
@@ -140,7 +145,10 @@ const AdminPage = () => {
             image_url: imageUrl,
             instructor,
             preview_url: previewUrl,
-            other_info: otherInfo
+            other_info: otherInfo,
+            is_free: isFree,
+            price: isFree ? 0 : Number(price),
+            currency: isFree ? null : currency
           }
         ])
         .select();
@@ -1265,6 +1273,55 @@ const createScheduleTables = async () => {
                 <p className="text-sm text-gray-500 mt-1">
                   Optional details like prerequisites, technical requirements, etc.
                 </p>
+              </div>
+              
+              <div className="space-y-4 mt-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="isFree" 
+                    checked={isFree} 
+                    onCheckedChange={(checked) => {
+                      setIsFree(checked === true);
+                      if (checked === true) setPrice("");
+                    }}
+                  />
+                  <label htmlFor="isFree" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Free Course
+                  </label>
+                </div>
+                
+                {!isFree && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="price">Price</Label>
+                      <Input 
+                        id="price"
+                        type="number"
+                        placeholder="Enter course price"
+                        value={price}
+                        onChange={(e) => setPrice(e.target.value)}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="currency">Currency</Label>
+                      <Select 
+                        value={currency} 
+                        onValueChange={setCurrency}
+                      >
+                        <SelectTrigger id="currency">
+                          <SelectValue placeholder="Select currency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="INR">Indian Rupee (₹)</SelectItem>
+                          <SelectItem value="USD">US Dollar ($)</SelectItem>
+                          <SelectItem value="EUR">Euro (€)</SelectItem>
+                          <SelectItem value="GBP">British Pound (£)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
               </div>
               
               <Button 
