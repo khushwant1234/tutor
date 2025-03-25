@@ -149,7 +149,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
             {is_free ? "Enroll for Free" : "Buy Course"}
           </Button>
         ) : (
-          <Link href={`/course/${id}`} className="w-full">
+          <Link href={`/Courses/${id}`} className="w-full">
             <Button variant="outline" className="w-full">
               Continue Learning
             </Button>
