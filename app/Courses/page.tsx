@@ -22,6 +22,9 @@ interface Course {
   image_url?: string;
   instructor?: string;
   isEnrolled?: boolean;
+  price?: number;
+  is_free?: boolean;
+  currency?: string;
 }
 
 const CoursesPage = () => {
@@ -197,6 +200,8 @@ const CoursesPage = () => {
                   <button
                     onClick={() => setSearchTerm("")}
                     className="p-2 mr-2 text-gray-400 hover:text-gray-600 transition-colors"
+                    title="Clear search"
+                    aria-label="Clear search"
                   >
                     <X className="h-5 w-5" />
                   </button>
@@ -402,6 +407,9 @@ const CoursesPage = () => {
                     image_url={course.image_url}
                     instructor={course.instructor}
                     isEnrolled={course.isEnrolled}
+                    price={course.price}
+                    is_free={course.is_free}
+                    currency={course.currency}
                   />
                 </motion.div>
               ))}

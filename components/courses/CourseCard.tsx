@@ -1,10 +1,13 @@
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import React, { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { Clock, BookOpen, Star, Users } from "lucide-react";
-import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast"
+import { Loader2, CheckCircle2 } from "lucide-react";
+import supabase from "@/utils/supabase/client";
+import { useRouter } from "next/navigation";
+import PaymentModal from "../payment/PaymentModal";
+import { formatPrice } from "@/utils/razorpay";
 
 interface CourseCardProps {
   id: string;
@@ -13,145 +16,186 @@ interface CourseCardProps {
   image_url?: string;
   instructor?: string;
   isEnrolled?: boolean;
+  price?: number;
+  is_free?: boolean;
+  currency?: string;
 }
 
-const CourseCard = ({
+const CourseCard: React.FC<CourseCardProps> = ({
   id,
   title,
   desc,
   image_url,
   instructor,
-  isEnrolled,
-}: CourseCardProps) => {
-  // Trim the description for the card
-  function trimDescription(text: string, maxLength: number = 150) {
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + "...";
-  }
+  isEnrolled = false,
+  price = 0,
+  is_free = true,
+  currency = "INR"
+}) => {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [enrollSuccess, setEnrollSuccess] = useState(false);
+  const [localIsEnrolled, setIsEnrolled] = useState(isEnrolled);
+  
+  // Payment states
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
 
-  // Mock data for enhanced visual appeal
-  const rating = 4.8;
-  const students = Math.floor(Math.random() * 1000) + 50;
-  const duration = Math.floor(Math.random() * 10) + 2;
-  const modules = Math.floor(Math.random() * 10) + 4;
+  const handleEnroll = async () => {
+    // If it's a paid course and not enrolled, show payment modal
+    if (!localIsEnrolled && !is_free) {
+      setShowPaymentModal(true);
+      return;
+    }
+    
+    // For free courses, use direct enrollment
+    try {
+      setIsLoading(true);
 
-  // Random category for demo purposes
-  const categories = ["Science", "Math", "Technology", "Languages"];
-  const category = categories[Math.floor(Math.random() * categories.length)];
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+
+      const { error } = await supabase
+        .from("user_data")
+        .insert({
+          user_id: user.id,
+          course_id: id,
+        });
+
+      if (error) throw error;
+
+      // Show the success message
+      setEnrollSuccess(true);
+      // Hide after 3 seconds
+      setTimeout(() => {
+        setEnrollSuccess(false);
+      }, 3000);
+
+      // Update local state
+      setIsEnrolled(true);
+    } catch (error) {
+      console.error("Error enrolling in course:", error);
+      toast({
+        title: "Enrollment Failed",
+        description: "There was an error enrolling in this course.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <motion.div
-      whileHover={{ y: -5 }}
-      className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 flex flex-col h-full"
-    >
-      {/* Image section with overlay */}
-      <div className="relative h-48 w-full overflow-hidden group">
-        {image_url ? (
-          <>
-            <Image
-              src={image_url}
-              alt={title}
-              fill
-              unoptimized={true}
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-black/5"></div>
-          </>
-        ) : (
-          <div className="bg-gradient-to-r from-cyan-500 to-blue-600 h-full w-full flex items-center justify-center text-white">
-            <BookOpen className="h-16 w-16 opacity-30" />
+    <Card className="h-full flex flex-col overflow-hidden hover:shadow-lg transition-shadow duration-300">
+      <div className="relative h-48 overflow-hidden">
+        <img
+          src={image_url || "https://placehold.co/600x400"}
+          alt={title}
+          className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300"
+        />
+        {instructor && (
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent text-white p-2 text-sm">
+            <span className="font-medium">Instructor: {instructor}</span>
           </div>
         )}
-
-        {/* Category badge */}
-        <div className="absolute top-4 left-4">
-          <Badge className="bg-white/80 text-cyan-700 hover:bg-white backdrop-blur-sm shadow-sm">
-            {category}
-          </Badge>
-        </div>
-
-        {/* Enrolled ribbon */}
-        {isEnrolled && (
-          <div className="absolute top-4 -right-1 z-20">
-            <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-1 font-medium rounded-l-full flex items-center shadow-md">
-              <div className="w-2 h-2 bg-white rounded-full mr-1.5"></div>
-              Enrolled
-            </div>
-            <div
-              className="absolute -bottom-2 right-0 w-0 h-0 
-                          border-t-8 border-t-emerald-700
-                          border-r-8 border-r-transparent"
-            ></div>
+        
+        {/* Enrollment badge */}
+        {localIsEnrolled && (
+          <div className="absolute top-3 right-3 bg-green-500 text-white text-xs px-2 py-1 rounded-full shadow-sm">
+            Enrolled
           </div>
         )}
-
-        {/* Course stats on image */}
-        <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center">
-          <div className="flex items-center bg-black/40 rounded-full px-2 py-0.5 text-white text-sm backdrop-blur-sm">
-            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400 mr-1" />
-            <span>{rating}</span>
-          </div>
-          <div className="flex items-center bg-black/40 rounded-full px-2 py-0.5 text-white text-sm backdrop-blur-sm">
-            <Users className="h-3 w-3 mr-1" />
-            <span>{students}</span>
-          </div>
-        </div>
       </div>
-
-      {/* Content section */}
-      <div className="p-5 flex flex-col flex-grow">
-        <div className="flex-grow">
-          {/* Title */}
-          <h3 className="text-xl font-bold text-gray-800 mb-2 line-clamp-2">
-            {title}
-          </h3>
-
-          {/* Description */}
-          <p className="text-gray-600 mb-4 line-clamp-3">
-            {trimDescription(desc)}
-          </p>
-
-          {/* Course stats */}
-          <div className="flex flex-wrap gap-3 mb-4">
-            <div className="flex items-center text-gray-500 text-sm">
-              <Clock className="h-4 w-4 mr-1 text-cyan-600" />
-              <span>{duration} hours</span>
-            </div>
-            <div className="flex items-center text-gray-500 text-sm">
-              <BookOpen className="h-4 w-4 mr-1 text-cyan-600" />
-              <span>{modules} modules</span>
-            </div>
-          </div>
-
-          {/* Instructor */}
-          {instructor && (
-            <div className="flex items-center mt-2 mb-4">
-              <div className="h-8 w-8 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 flex items-center justify-center text-white font-medium text-sm">
-                {instructor.slice(0, 2).toUpperCase()}
-              </div>
-              <div className="ml-2">
-                <p className="text-sm font-medium text-gray-900">
-                  {instructor}
-                </p>
-                <p className="text-xs text-gray-500">Instructor</p>
-              </div>
+      
+      <CardContent className="flex-grow p-5">
+        <h3 className="text-xl font-semibold mb-2">{title}</h3>
+        <p className="text-gray-600 text-sm line-clamp-3 mb-4">{desc}</p>
+        
+        {/* Price display */}
+        <div className="mt-2 mb-3">
+          {is_free ? (
+            <span className="bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded">
+              Free Course
+            </span>
+          ) : (
+            <div className="flex items-baseline">
+              <span className="text-lg font-bold text-gray-900">
+                {formatPrice(price, currency)}
+              </span>
+              <span className="ml-1 text-sm text-gray-500">
+                {currency}
+              </span>
             </div>
           )}
         </div>
-
-        {/* CTA Button */}
-        <div className="pt-4 mt-auto border-t border-gray-100">
-          <Link href={`/Courses/${id}`} className="w-full block">
-            <Button
-              variant="default"
-              className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
-            >
-              {isEnrolled ? "Continue Learning" : "View Course"}
+      </CardContent>
+      
+      <CardFooter className="p-5 pt-0 mt-auto">
+        {!localIsEnrolled ? (
+          <Button 
+            onClick={handleEnroll} 
+            disabled={isLoading}
+            variant="default"
+            className="w-full"
+          >
+            {isLoading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : null}
+            {is_free ? "Enroll for Free" : "Buy Course"}
+          </Button>
+        ) : (
+          <Link href={`/Courses/${id}`} className="w-full">
+            <Button variant="outline" className="w-full">
+              Continue Learning
             </Button>
           </Link>
+        )}
+      </CardFooter>
+      
+      {/* Success message */}
+      {enrollSuccess && (
+        <div className="absolute bottom-4 right-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-md z-10 animate-in fade-in">
+          <div className="flex">
+            <CheckCircle2 className="h-5 w-5 text-green-500 mr-2" />
+            <p className="text-sm">Successfully enrolled in course!</p>
+          </div>
         </div>
-      </div>
-    </motion.div>
+      )}
+      
+      {/* Payment success message */}
+      {paymentSuccess && (
+        <div className="fixed bottom-4 right-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-md z-50 animate-in slide-in-from-right">
+          <div className="flex">
+            <CheckCircle2 className="h-5 w-5 text-green-500 mr-2" />
+            <p className="text-sm font-medium">
+              Payment successful! You're now enrolled in the course.
+            </p>
+          </div>
+        </div>
+      )}
+      
+      {/* Payment Modal */}
+      {showPaymentModal && (
+        <PaymentModal
+          courseId={id}
+          courseTitle={title}
+          price={price || 0}
+          currency={currency || 'INR'}
+          onClose={() => setShowPaymentModal(false)}
+          onSuccess={() => {
+            setPaymentSuccess(true);
+            setShowPaymentModal(false);
+            setIsEnrolled(true);
+            setTimeout(() => setPaymentSuccess(false), 5000);
+          }}
+        />
+      )}
+    </Card>
   );
 };
 

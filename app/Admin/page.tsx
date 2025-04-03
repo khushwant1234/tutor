@@ -27,6 +27,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+
+// Add this type definition at the top of your component
+type RecurringClass = {
+  id: string;
+  title: string;
+  count: number;
+};
+
 const AdminPage = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -40,6 +49,9 @@ const AdminPage = () => {
   const [instructor, setInstructor] = useState("");
   const [previewUrl, setPreviewUrl] = useState("");
   const [otherInfo, setOtherInfo] = useState("");
+  const [price, setPrice] = useState<number | string>("");
+  const [isFree, setIsFree] = useState(true);
+  const [currency, setCurrency] = useState("INR");
 
   // Admin user form state
   const [adminEmail, setAdminEmail] = useState("");
@@ -147,7 +159,10 @@ const AdminPage = () => {
             instructor,
             preview_url: previewUrl,
             other_info: otherInfo,
-          },
+            is_free: isFree,
+            price: isFree ? 0 : Number(price),
+            currency: isFree ? null : currency
+          }
         ])
         .select();
 
@@ -408,6 +423,11 @@ const AdminPage = () => {
 
   // Add this to AdminPage component
   const [selectedCourseId, setSelectedCourseId] = useState("");
+  type Course = {
+    id: string;
+    title: string;
+  };
+
   const [courses, setCourses] = useState<Course[]>([]);
   const [scheduleType, setScheduleType] = useState<"one-time" | "recurring">(
     "one-time"
@@ -1343,16 +1363,64 @@ const AdminPage = () => {
                   etc.
                 </p>
               </div>
-
-              <Button type="submit" disabled={isLoading} className="w-full">
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding
-                    Course...
-                  </>
-                ) : (
-                  "Add Course"
+              
+              <div className="space-y-4 mt-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="isFree" 
+                    checked={isFree} 
+                    onCheckedChange={(checked) => {
+                      setIsFree(checked === true);
+                      if (checked === true) setPrice("");
+                    }}
+                  />
+                  <label htmlFor="isFree" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Free Course
+                  </label>
+                </div>
+                
+                {!isFree && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="price">Price</Label>
+                      <Input 
+                        id="price"
+                        type="number"
+                        placeholder="Enter course price"
+                        value={price}
+                        onChange={(e) => setPrice(e.target.value)}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="currency">Currency</Label>
+                      <Select 
+                        value={currency} 
+                        onValueChange={setCurrency}
+                      >
+                        <SelectTrigger id="currency">
+                          <SelectValue placeholder="Select currency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="INR">Indian Rupee (₹)</SelectItem>
+                          <SelectItem value="USD">US Dollar ($)</SelectItem>
+                          <SelectItem value="EUR">Euro (€)</SelectItem>
+                          <SelectItem value="GBP">British Pound (£)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                 )}
+              </div>
+              
+              <Button 
+                type="submit" 
+                disabled={isLoading}
+                className="w-full"
+              >
+                {isLoading ? 
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding Course...</> : 
+                  'Add Course'}
               </Button>
             </form>
           </CardContent>
@@ -1947,39 +2015,36 @@ const AdminPage = () => {
                       variant="secondary"
                       onClick={() => {
                         // Group classes by parent class_id to show recurring classes
-                        const parentClasses = classesForCourse.reduce(
-                          (acc, cls) => {
-                            if (cls.recurring) {
-                              if (!acc[cls.class_id]) {
-                                acc[cls.class_id] = {
-                                  id: cls.class_id,
-                                  title: cls.parent_title || cls.title,
-                                  count: 1,
-                                };
-                              } else {
-                                acc[cls.class_id].count++;
-                              }
+                        const parentClasses: Record<string, RecurringClass> = classesForCourse.reduce((acc, cls) => {
+                          if (cls.recurring) {
+                            if (!acc[cls.class_id]) {
+                              acc[cls.class_id] = {
+                                id: cls.class_id,
+                                title: cls.parent_title || cls.title,
+                                count: 1
+                              };
+                            } else {
+                              acc[cls.class_id].count++;
                             }
-                            return acc;
-                          },
-                          {}
-                        );
-
+                          }
+                          return acc;
+                        }, {} as Record<string, RecurringClass>);
+                        
                         // If there are recurring classes, show a modal to select which one to bulk update
-                        const recurringClasses = Object.values(parentClasses);
-
+                        const recurringClasses: RecurringClass[] = Object.values(parentClasses);
+                        
                         if (recurringClasses.length === 0) {
                           alert("No recurring classes found for this course.");
                           return;
                         }
 
                         // Show a dialog to select which recurring class series to update
-                        const select = document.createElement("select");
-                        select.id = "recurringClassSelect";
-                        select.className = "p-2 border rounded w-full mb-4";
-
-                        recurringClasses.forEach((cls: any) => {
-                          const option = document.createElement("option");
+                        const select = document.createElement('select');
+                        select.id = 'recurringClassSelect';
+                        select.className = 'p-2 border rounded w-full mb-4';
+                        
+                        recurringClasses.forEach((cls: RecurringClass) => {
+                          const option = document.createElement('option');
                           option.value = cls.id;
                           option.textContent = `${cls.title} (${cls.count} classes)`;
                           select.appendChild(option);
@@ -2016,10 +2081,8 @@ const AdminPage = () => {
                         confirmButton.textContent = "Continue";
                         confirmButton.onclick = () => {
                           const selectedClassId = select.value;
-                          const selectedClass = recurringClasses.find(
-                            (c: any) => c.id === selectedClassId
-                          );
-
+                          const selectedClass = recurringClasses.find((c: RecurringClass) => c.id === selectedClassId);
+                          
                           if (selectedClass) {
                             setBulkUpdateClassId(selectedClassId);
                             setBulkUpdateParentTitle(selectedClass.title);
@@ -2052,39 +2115,36 @@ const AdminPage = () => {
                       variant="destructive"
                       onClick={() => {
                         // Group classes by parent class_id to show recurring classes
-                        const parentClasses = classesForCourse.reduce(
-                          (acc, cls) => {
-                            if (cls.recurring) {
-                              if (!acc[cls.class_id]) {
-                                acc[cls.class_id] = {
-                                  id: cls.class_id,
-                                  title: cls.parent_title || cls.title,
-                                  count: 1,
-                                };
-                              } else {
-                                acc[cls.class_id].count++;
-                              }
+                        const parentClasses: Record<string, RecurringClass> = classesForCourse.reduce((acc, cls) => {
+                          if (cls.recurring) {
+                            if (!acc[cls.class_id]) {
+                              acc[cls.class_id] = {
+                                id: cls.class_id,
+                                title: cls.parent_title || cls.title,
+                                count: 1
+                              };
+                            } else {
+                              acc[cls.class_id].count++;
                             }
-                            return acc;
-                          },
-                          {}
-                        );
-
+                          }
+                          return acc;
+                        }, {} as Record<string, RecurringClass>);
+                        
                         // If there are recurring classes, show a modal to select which one to bulk update
-                        const recurringClasses = Object.values(parentClasses);
-
+                        const recurringClasses: RecurringClass[] = Object.values(parentClasses);
+                        
                         if (recurringClasses.length === 0) {
                           alert("No recurring classes found for this course.");
                           return;
                         }
 
                         // Show a dialog to select which recurring class series to delete
-                        const select = document.createElement("select");
-                        select.id = "deleteRecurringClassSelect";
-                        select.className = "p-2 border rounded w-full mb-4";
-
-                        recurringClasses.forEach((cls: any) => {
-                          const option = document.createElement("option");
+                        const select = document.createElement('select');
+                        select.id = 'deleteRecurringClassSelect';
+                        select.className = 'p-2 border rounded w-full mb-4';
+                        
+                        recurringClasses.forEach((cls: RecurringClass) => {
+                          const option = document.createElement('option');
                           option.value = cls.id;
                           option.textContent = `${cls.title} (${cls.count} classes)`;
                           select.appendChild(option);
