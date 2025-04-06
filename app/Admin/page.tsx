@@ -161,8 +161,8 @@ const AdminPage = () => {
             other_info: otherInfo,
             is_free: isFree,
             price: isFree ? 0 : Number(price),
-            currency: isFree ? null : currency
-          }
+            currency: isFree ? null : currency,
+          },
         ])
         .select();
 
@@ -1266,1125 +1266,1198 @@ const AdminPage = () => {
       <div className="container mx-auto py-8 px-4">
         <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
 
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Add New Course</CardTitle>
-            <CardDescription>
-              Create a new course to add to the database
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {error && (
-              <div className="bg-red-50 p-4 mb-6 rounded-md flex items-start">
-                <AlertCircle className="text-red-500 mr-2 h-5 w-5 mt-0.5" />
-                <span className="text-red-600">{error}</span>
-              </div>
-            )}
+        {/* Wrap admin sections in Tabs */}
+        <Tabs defaultValue="courses" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="courses">Add New Course</TabsTrigger>
+            <TabsTrigger value="admins">Manage Administrators</TabsTrigger>
+            <TabsTrigger value="schedule">Schedule Classes</TabsTrigger>
+            <TabsTrigger value="classes">Manage Classes</TabsTrigger>
+          </TabsList>
 
-            {success && (
-              <div className="bg-green-50 p-4 mb-6 rounded-md flex items-start">
-                <CheckCircle2 className="text-green-500 mr-2 h-5 w-5 mt-0.5" />
-                <span className="text-green-600">
-                  Course added successfully!
-                </span>
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="title">Course Title</Label>
-                  <Input
-                    id="title"
-                    placeholder="Course title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Course description"
-                  rows={4}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="imageUrl">Image URL</Label>
-                <Input
-                  id="imageUrl"
-                  placeholder="https://placehold.co/600x400"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="instructor">Instructor</Label>
-                <Input
-                  id="instructor"
-                  placeholder="Instructor name"
-                  value={instructor}
-                  onChange={(e) => setInstructor(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="previewUrl">YouTube Preview (Optional)</Label>
-                <Input
-                  id="previewUrl"
-                  placeholder="https://www.youtube.com/watch?v=..."
-                  value={previewUrl}
-                  onChange={(e) => setPreviewUrl(e.target.value)}
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  Add a YouTube video URL to preview your course
-                </p>
-              </div>
-
-              <div>
-                <Label htmlFor="otherInfo">
-                  Additional Information (Optional)
-                </Label>
-                <Textarea
-                  id="otherInfo"
-                  placeholder="Additional information about the course like prerequisites, requirements, etc."
-                  rows={3}
-                  value={otherInfo}
-                  onChange={(e) => setOtherInfo(e.target.value)}
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  Optional details like prerequisites, technical requirements,
-                  etc.
-                </p>
-              </div>
-              
-              <div className="space-y-4 mt-4">
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="isFree" 
-                    checked={isFree} 
-                    onCheckedChange={(checked) => {
-                      setIsFree(checked === true);
-                      if (checked === true) setPrice("");
-                    }}
-                  />
-                  <label htmlFor="isFree" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                    Free Course
-                  </label>
-                </div>
-                
-                {!isFree && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="price">Price</Label>
-                      <Input 
-                        id="price"
-                        type="number"
-                        placeholder="Enter course price"
-                        value={price}
-                        onChange={(e) => setPrice(e.target.value)}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="currency">Currency</Label>
-                      <Select 
-                        value={currency} 
-                        onValueChange={setCurrency}
-                      >
-                        <SelectTrigger id="currency">
-                          <SelectValue placeholder="Select currency" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="INR">Indian Rupee (₹)</SelectItem>
-                          <SelectItem value="USD">US Dollar ($)</SelectItem>
-                          <SelectItem value="EUR">Euro (€)</SelectItem>
-                          <SelectItem value="GBP">British Pound (£)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+          {/* Add Course Tab */}
+          <TabsContent value="courses">
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle>Add New Course</CardTitle>
+                <CardDescription>
+                  Create a new course to add to the database
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {error && (
+                  <div className="bg-red-50 p-4 mb-6 rounded-md flex items-start">
+                    <AlertCircle className="text-red-500 mr-2 h-5 w-5 mt-0.5" />
+                    <span className="text-red-600">{error}</span>
                   </div>
                 )}
-              </div>
-              
-              <Button 
-                type="submit" 
-                disabled={isLoading}
-                className="w-full"
-              >
-                {isLoading ? 
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding Course...</> : 
-                  'Add Course'}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
 
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Manage Administrators</CardTitle>
-            <CardDescription>
-              Add another user as an administrator
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {adminError && (
-              <div className="bg-red-50 p-4 mb-6 rounded-md flex items-start">
-                <AlertCircle className="text-red-500 mr-2 h-5 w-5 mt-0.5" />
-                <span className="text-red-600">{adminError}</span>
-              </div>
-            )}
-
-            {adminSuccess && (
-              <div className="bg-green-50 p-4 mb-6 rounded-md flex items-start">
-                <CheckCircle2 className="text-green-500 mr-2 h-5 w-5 mt-0.5" />
-                <span className="text-green-600">
-                  Admin privileges granted successfully!
-                </span>
-              </div>
-            )}
-
-            <form onSubmit={handleAddAdmin} className="space-y-4">
-              <div>
-                <Label htmlFor="adminEmail">User Email</Label>
-                <Input
-                  id="adminEmail"
-                  type="email"
-                  placeholder="user@example.com"
-                  value={adminEmail}
-                  onChange={(e) => setAdminEmail(e.target.value)}
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  The user must already have an account in the system.
-                </p>
-              </div>
-
-              <Button type="submit" disabled={adminLoading} className="w-full">
-                {adminLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
-                    Processing...
-                  </>
-                ) : (
-                  "Add as Administrator"
+                {success && (
+                  <div className="bg-green-50 p-4 mb-6 rounded-md flex items-start">
+                    <CheckCircle2 className="text-green-500 mr-2 h-5 w-5 mt-0.5" />
+                    <span className="text-green-600">
+                      Course added successfully!
+                    </span>
+                  </div>
                 )}
-              </Button>
-            </form>
-            <div className="mt-8 pt-8 border-t border-gray-200">
-              <h3 className="text-lg font-semibold mb-4">
-                Revoke Admin Privileges
-              </h3>
 
-              {revokeError && (
-                <div
-                  className="bg-red-50 p-4 mb-6 rounded-md flex items-start"
-                  id="revokeErrorMessage"
-                >
-                  <AlertCircle className="text-red-500 mr-2 h-5 w-5 mt-0.5" />
-                  <span className="text-red-600">{revokeError}</span>
-                </div>
-              )}
-
-              {revokeSuccess && (
-                <div className="bg-green-50 p-4 mb-6 rounded-md flex items-start">
-                  <CheckCircle2 className="text-green-500 mr-2 h-5 w-5 mt-0.5" />
-                  <span className="text-green-600">
-                    Admin privileges revoked successfully!
-                  </span>
-                </div>
-              )}
-
-              <form onSubmit={handleRevokeAdmin} className="space-y-4">
-                <div>
-                  <Label htmlFor="revokeEmail">Admin Email</Label>
-                  <Input
-                    id="revokeEmail"
-                    type="email"
-                    placeholder="admin@example.com"
-                    value={revokeEmail}
-                    onChange={(e) => setRevokeEmail(e.target.value)}
-                  />
-                  <p className="text-sm text-gray-500 mt-1">
-                    Enter the email of the admin whose privileges you want to
-                    revoke.
-                  </p>
-                </div>
-
-                <Button
-                  type="submit"
-                  disabled={revokeLoading}
-                  variant="destructive"
-                  className="w-full"
-                >
-                  {revokeLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
-                      Processing...
-                    </>
-                  ) : (
-                    "Revoke Admin Privileges"
-                  )}
-                </Button>
-              </form>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="mb-8" id="scheduleSection">
-          <CardHeader>
-            <CardTitle>Schedule Classes</CardTitle>
-            <CardDescription>
-              Create class schedules for your courses
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {classSchedulingError && (
-              <div className="bg-red-50 p-4 mb-6 rounded-md flex items-start">
-                <AlertCircle className="text-red-500 mr-2 h-5 w-5 mt-0.5" />
-                <span className="text-red-600">{classSchedulingError}</span>
-              </div>
-            )}
-
-            {classSchedulingSuccess && (
-              <div className="bg-green-50 p-4 mb-6 rounded-md flex items-start">
-                <CheckCircle2 className="text-green-500 mr-2 h-5 w-5 mt-0.5" />
-                <span className="text-green-600">
-                  {scheduleType === "one-time"
-                    ? "Class scheduled successfully!"
-                    : "Recurring schedule created successfully!"}
-                </span>
-              </div>
-            )}
-
-            <Tabs
-              defaultValue="one-time"
-              onValueChange={(val) =>
-                setScheduleType(val as "one-time" | "recurring")
-              }
-            >
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="one-time">One-time Class</TabsTrigger>
-                <TabsTrigger value="recurring">Recurring Schedule</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="one-time" className="space-y-4 pt-4">
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    scheduleOneTimeClass();
-                  }}
-                  className="space-y-4"
-                >
+                <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="courseSingle">Select Course</Label>
-                      <Select
-                        onValueChange={setSelectedCourseId}
-                        value={selectedCourseId}
-                      >
-                        <SelectTrigger id="courseSingle">
-                          <SelectValue placeholder="Select a course" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {courses.map((course) => (
-                            <SelectItem key={course.id} value={course.id}>
-                              {course.title}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="classTitle">Class Title</Label>
+                      <Label htmlFor="title">Course Title</Label>
                       <Input
-                        id="classTitle"
-                        placeholder="Introduction Session"
-                        value={classTitle}
-                        onChange={(e) => setClassTitle(e.target.value)}
+                        id="title"
+                        placeholder="Course title"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
                       />
                     </div>
                   </div>
 
                   <div>
-                    <Label htmlFor="classDescription">
-                      Description (Optional)
-                    </Label>
+                    <Label htmlFor="description">Description</Label>
                     <Textarea
-                      id="classDescription"
-                      placeholder="What will be covered in this class..."
-                      value={classDescription}
-                      onChange={(e) => setClassDescription(e.target.value)}
-                      rows={2}
+                      id="description"
+                      placeholder="Course description"
+                      rows={4}
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <Label htmlFor="classDate">Date</Label>
-                      <Input
-                        id="classDate"
-                        type="date"
-                        value={classDate}
-                        onChange={(e) => setClassDate(e.target.value)}
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="startTime">Start Time</Label>
-                      <Input
-                        id="startTime"
-                        type="time"
-                        value={startTime}
-                        onChange={(e) => setStartTime(e.target.value)}
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="duration">Duration (minutes)</Label>
-                      <Input
-                        id="duration"
-                        type="number"
-                        min="15"
-                        step="15"
-                        value={duration.toString()}
-                        onChange={(e) =>
-                          setDuration(parseInt(e.target.value) || 60)
-                        }
-                      />
-                    </div>
-                  </div>
-
                   <div>
-                    <Label htmlFor="meetingLink">Meeting Link (Optional)</Label>
+                    <Label htmlFor="imageUrl">Image URL</Label>
                     <Input
-                      id="meetingLink"
-                      placeholder="https://zoom.us/j/..."
-                      value={meetingLink}
-                      onChange={(e) => setMeetingLink(e.target.value)}
+                      id="imageUrl"
+                      placeholder="https://placehold.co/600x400"
+                      value={imageUrl}
+                      onChange={(e) => setImageUrl(e.target.value)}
                     />
                   </div>
 
-                  <Button type="submit" className="w-full">
-                    Schedule Class
-                  </Button>
-                </form>
-              </TabsContent>
-
-              <TabsContent value="recurring" className="space-y-4 pt-4">
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    createRecurringSchedule();
-                  }}
-                  className="space-y-4"
-                >
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="courseRecurring">Select Course</Label>
-                      <Select
-                        onValueChange={setSelectedCourseId}
-                        value={selectedCourseId}
-                      >
-                        <SelectTrigger id="courseRecurring">
-                          <SelectValue placeholder="Select a course" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {courses.map((course) => (
-                            <SelectItem key={course.id} value={course.id}>
-                              {course.title}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="classTitleRecurring">Class Title</Label>
-                      <Input
-                        id="classTitleRecurring"
-                        placeholder="Weekly Session"
-                        value={classTitle}
-                        onChange={(e) => setClassTitle(e.target.value)}
-                      />
-                    </div>
+                  <div>
+                    <Label htmlFor="instructor">Instructor</Label>
+                    <Input
+                      id="instructor"
+                      placeholder="Instructor name"
+                      value={instructor}
+                      onChange={(e) => setInstructor(e.target.value)}
+                    />
                   </div>
 
                   <div>
-                    <Label>Select Days</Label>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
-                        (day, idx) => (
-                          <Button
-                            key={idx}
-                            type="button"
-                            variant={
-                              recurringDays.includes(idx)
-                                ? "default"
-                                : "outline"
-                            }
-                            size="sm"
-                            onClick={() => {
-                              if (recurringDays.includes(idx)) {
-                                setRecurringDays(
-                                  recurringDays.filter((d) => d !== idx)
-                                );
-                              } else {
-                                setRecurringDays([...recurringDays, idx]);
-                              }
-                            }}
-                          >
-                            {day}
-                          </Button>
-                        )
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="startDate">Start Date</Label>
-                      <Input
-                        id="startDate"
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="endDate">End Date</Label>
-                      <Input
-                        id="endDate"
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Replace your existing time slots section with this */}
-                  <div>
-                    <Label>Class Times</Label>
-                    <p className="text-sm text-gray-500 mb-2">
-                      Add class times for the days you selected above:{" "}
-                      {recurringDays
-                        .map(
-                          (day) =>
-                            [
-                              "Sunday",
-                              "Monday",
-                              "Tuesday",
-                              "Wednesday",
-                              "Thursday",
-                              "Friday",
-                              "Saturday",
-                            ][day]
-                        )
-                        .join(", ")}
-                    </p>
-
-                    <div className="mt-2 space-y-3">
-                      {/* Display existing time slots */}
-                      {timeSlots.map((slot, idx) => (
-                        <div key={idx} className="flex items-center gap-2">
-                          <div className="bg-slate-100 px-3 py-2 rounded-md flex-1">
-                            {
-                              [
-                                "Sunday",
-                                "Monday",
-                                "Tuesday",
-                                "Wednesday",
-                                "Thursday",
-                                "Friday",
-                                "Saturday",
-                              ][slot.day]
-                            }{" "}
-                            at {slot.time}
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeTimeSlot(idx)}
-                          >
-                            <X size={16} />
-                          </Button>
-                        </div>
-                      ))}
-
-                      {/* Only show the add time form if there are recurring days selected */}
-                      {recurringDays.length > 0 && (
-                        <div className="grid grid-cols-3 gap-2 mt-2">
-                          <Select
-                            onValueChange={(val) =>
-                              setSelectedDay(parseInt(val))
-                            }
-                            value={selectedDay?.toString() || ""}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select day" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {/* Only show days that are in recurringDays */}
-                              {recurringDays
-                                .filter((dayIndex) => {
-                                  // To prevent duplicate time slots, check if this day+time combo exists
-                                  if (selectedTime) {
-                                    return !timeSlots.some(
-                                      (slot) =>
-                                        slot.day === dayIndex &&
-                                        slot.time === selectedTime
-                                    );
-                                  }
-                                  return true;
-                                })
-                                .map((dayIndex) => (
-                                  <SelectItem
-                                    key={dayIndex}
-                                    value={dayIndex.toString()}
-                                  >
-                                    {
-                                      [
-                                        "Sunday",
-                                        "Monday",
-                                        "Tuesday",
-                                        "Wednesday",
-                                        "Thursday",
-                                        "Friday",
-                                        "Saturday",
-                                      ][dayIndex]
-                                    }
-                                  </SelectItem>
-                                ))}
-                            </SelectContent>
-                          </Select>
-
-                          <Input
-                            type="time"
-                            value={selectedTime}
-                            onChange={(e) => setSelectedTime(e.target.value)}
-                            placeholder="Select time"
-                          />
-
-                          <Button
-                            type="button"
-                            onClick={() => {
-                              if (selectedDay !== undefined && selectedTime) {
-                                addTimeSlot(selectedDay, selectedTime);
-                              }
-                            }}
-                            disabled={
-                              selectedDay === undefined || !selectedTime
-                            }
-                          >
-                            Add Time
-                          </Button>
-                        </div>
-                      )}
-
-                      {/* Show message if no days are selected */}
-                      {recurringDays.length === 0 && (
-                        <div className="p-4 bg-gray-50 rounded-md text-center text-gray-500">
-                          Please select days of the week above before adding
-                          class times.
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="meetingLinkRecurring">
-                      Default Meeting Link
+                    <Label htmlFor="previewUrl">
+                      YouTube Preview (Optional)
                     </Label>
                     <Input
-                      id="meetingLinkRecurring"
-                      placeholder="https://zoom.us/j/..."
-                      value={meetingLink}
-                      onChange={(e) => setMeetingLink(e.target.value)}
+                      id="previewUrl"
+                      placeholder="https://www.youtube.com/watch?v=..."
+                      value={previewUrl}
+                      onChange={(e) => setPreviewUrl(e.target.value)}
                     />
                     <p className="text-sm text-gray-500 mt-1">
-                      This link will be used for all classes in this schedule
-                      unless overridden individually.
+                      Add a YouTube video URL to preview your course
                     </p>
                   </div>
 
-                  <Button type="submit" className="w-full mt-6">
-                    Create Schedule
+                  <div>
+                    <Label htmlFor="otherInfo">
+                      Additional Information (Optional)
+                    </Label>
+                    <Textarea
+                      id="otherInfo"
+                      placeholder="Additional information about the course like prerequisites, requirements, etc."
+                      rows={3}
+                      value={otherInfo}
+                      onChange={(e) => setOtherInfo(e.target.value)}
+                    />
+                    <p className="text-sm text-gray-500 mt-1">
+                      Optional details like prerequisites, technical
+                      requirements, etc.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4 mt-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="isFree"
+                        checked={isFree}
+                        onCheckedChange={(checked) => {
+                          setIsFree(checked === true);
+                          if (checked === true) setPrice("");
+                        }}
+                      />
+                      <label
+                        htmlFor="isFree"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        Free Course
+                      </label>
+                    </div>
+
+                    {!isFree && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="price">Price</Label>
+                          <Input
+                            id="price"
+                            type="number"
+                            placeholder="Enter course price"
+                            value={price}
+                            onChange={(e) => setPrice(e.target.value)}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="currency">Currency</Label>
+                          <Select value={currency} onValueChange={setCurrency}>
+                            <SelectTrigger id="currency">
+                              <SelectValue placeholder="Select currency" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="INR">
+                                Indian Rupee (₹)
+                              </SelectItem>
+                              <SelectItem value="USD">US Dollar ($)</SelectItem>
+                              <SelectItem value="EUR">Euro (€)</SelectItem>
+                              <SelectItem value="GBP">
+                                British Pound (£)
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <Button type="submit" disabled={isLoading} className="w-full">
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding
+                        Course...
+                      </>
+                    ) : (
+                      "Add Course"
+                    )}
                   </Button>
                 </form>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        {/* Add this card after your Schedule Classes card */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Manage Classes</CardTitle>
-            <CardDescription>
-              Update meeting links or delete upcoming classes
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {editClassError && (
-              <div className="bg-red-50 p-4 mb-6 rounded-md flex items-start">
-                <AlertCircle className="text-red-500 mr-2 h-5 w-5 mt-0.5" />
-                <span className="text-red-600">{editClassError}</span>
-              </div>
-            )}
-
-            {editClassSuccess && (
-              <div className="bg-green-50 p-4 mb-6 rounded-md flex items-start">
-                <CheckCircle2 className="text-green-500 mr-2 h-5 w-5 mt-0.5" />
-                <span className="text-green-600">
-                  Class updated successfully!
-                </span>
-              </div>
-            )}
-
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="manageCourse">Select Course</Label>
-                <Select
-                  value={manageCourseId}
-                  onValueChange={(val) => {
-                    setManageCourseId(val);
-                    fetchClassesForCourse(val);
-                  }}
-                >
-                  <SelectTrigger id="manageCourse">
-                    <SelectValue placeholder="Select a course" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {courses.map((course) => (
-                      <SelectItem key={course.id} value={course.id}>
-                        {course.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-gray-500 mt-1">
-                  Only upcoming classes are shown. Past classes cannot be
-                  modified.
-                </p>
-              </div>
-
-              {loadingClasses && (
-                <div className="py-8 text-center">
-                  <Loader2 className="h-8 w-8 animate-spin text-gray-500 mx-auto" />
-                  <p className="mt-2 text-gray-500">Loading classes...</p>
-                </div>
-              )}
-
-              {!loadingClasses &&
-                classesForCourse.length === 0 &&
-                manageCourseId && (
-                  <div className="py-8 text-center">
-                    <p className="text-gray-500">
-                      No upcoming classes found for this course.
-                    </p>
-                    <Button
-                      variant="outline"
-                      className="mt-4"
-                      onClick={() => {
-                        setScheduleType("one-time");
-                        setSelectedCourseId(manageCourseId);
-                        // Scroll to the schedule section
-                        document
-                          .querySelector("#scheduleSection")
-                          ?.scrollIntoView({ behavior: "smooth" });
-                      }}
-                    >
-                      Create a Class
-                    </Button>
+          {/* Manage Administrators Tab */}
+          <TabsContent value="admins">
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle>Manage Administrators</CardTitle>
+                <CardDescription>
+                  Add another user as an administrator
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {adminError && (
+                  <div className="bg-red-50 p-4 mb-6 rounded-md flex items-start">
+                    <AlertCircle className="text-red-500 mr-2 h-5 w-5 mt-0.5" />
+                    <span className="text-red-600">{adminError}</span>
                   </div>
                 )}
 
-              {!loadingClasses && classesForCourse.length > 0 && (
-                <div className="border rounded-md overflow-hidden">
-                  {/* Bulk operations toolbar */}
-                  <div className="mb-4 flex flex-wrap gap-2 p-4 bg-gray-50">
-                    <Button
-                      variant="secondary"
-                      onClick={() => {
-                        // Group classes by parent class_id to show recurring classes
-                        const parentClasses: Record<string, RecurringClass> = classesForCourse.reduce((acc, cls) => {
-                          if (cls.recurring) {
-                            if (!acc[cls.class_id]) {
-                              acc[cls.class_id] = {
-                                id: cls.class_id,
-                                title: cls.parent_title || cls.title,
-                                count: 1
-                              };
-                            } else {
-                              acc[cls.class_id].count++;
-                            }
-                          }
-                          return acc;
-                        }, {} as Record<string, RecurringClass>);
-                        
-                        // If there are recurring classes, show a modal to select which one to bulk update
-                        const recurringClasses: RecurringClass[] = Object.values(parentClasses);
-                        
-                        if (recurringClasses.length === 0) {
-                          alert("No recurring classes found for this course.");
-                          return;
-                        }
+                {adminSuccess && (
+                  <div className="bg-green-50 p-4 mb-6 rounded-md flex items-start">
+                    <CheckCircle2 className="text-green-500 mr-2 h-5 w-5 mt-0.5" />
+                    <span className="text-green-600">
+                      Admin privileges granted successfully!
+                    </span>
+                  </div>
+                )}
 
-                        // Show a dialog to select which recurring class series to update
-                        const select = document.createElement('select');
-                        select.id = 'recurringClassSelect';
-                        select.className = 'p-2 border rounded w-full mb-4';
-                        
-                        recurringClasses.forEach((cls: RecurringClass) => {
-                          const option = document.createElement('option');
-                          option.value = cls.id;
-                          option.textContent = `${cls.title} (${cls.count} classes)`;
-                          select.appendChild(option);
-                        });
-
-                        const dialog = document.createElement("div");
-                        dialog.className =
-                          "fixed inset-0 bg-black/50 flex items-center justify-center z-50";
-
-                        const content = document.createElement("div");
-                        content.className =
-                          "bg-white rounded-lg p-6 max-w-md w-full mx-4";
-                        content.innerHTML = `
-                          <h3 class="text-lg font-medium mb-2">Select Recurring Class Series</h3>
-                          <p class="text-sm text-gray-500 mb-4">Choose a recurring class series to update all meeting links at once.</p>
-                        `;
-
-                        content.appendChild(select);
-
-                        const buttonContainer = document.createElement("div");
-                        buttonContainer.className =
-                          "flex justify-end space-x-2 mt-4";
-
-                        const cancelButton = document.createElement("button");
-                        cancelButton.className =
-                          "px-4 py-2 border rounded text-gray-700 bg-white hover:bg-gray-50";
-                        cancelButton.textContent = "Cancel";
-                        cancelButton.onclick = () =>
-                          document.body.removeChild(dialog);
-
-                        const confirmButton = document.createElement("button");
-                        confirmButton.className =
-                          "px-4 py-2 rounded text-white bg-blue-600 hover:bg-blue-700";
-                        confirmButton.textContent = "Continue";
-                        confirmButton.onclick = () => {
-                          const selectedClassId = select.value;
-                          const selectedClass = recurringClasses.find((c: RecurringClass) => c.id === selectedClassId);
-                          
-                          if (selectedClass) {
-                            setBulkUpdateClassId(selectedClassId);
-                            setBulkUpdateParentTitle(selectedClass.title);
-                            setBulkUpdateLink("");
-                            setBulkUpdateModalOpen(true);
-                          }
-
-                          document.body.removeChild(dialog);
-                        };
-
-                        buttonContainer.appendChild(cancelButton);
-                        buttonContainer.appendChild(confirmButton);
-                        content.appendChild(buttonContainer);
-
-                        dialog.appendChild(content);
-                        document.body.appendChild(dialog);
-
-                        // Make the dialog dismissable by clicking outside
-                        dialog.onclick = (e) => {
-                          if (e.target === dialog) {
-                            document.body.removeChild(dialog);
-                          }
-                        };
-                      }}
-                    >
-                      Bulk Update Meeting Links
-                    </Button>
-
-                    <Button
-                      variant="destructive"
-                      onClick={() => {
-                        // Group classes by parent class_id to show recurring classes
-                        const parentClasses: Record<string, RecurringClass> = classesForCourse.reduce((acc, cls) => {
-                          if (cls.recurring) {
-                            if (!acc[cls.class_id]) {
-                              acc[cls.class_id] = {
-                                id: cls.class_id,
-                                title: cls.parent_title || cls.title,
-                                count: 1
-                              };
-                            } else {
-                              acc[cls.class_id].count++;
-                            }
-                          }
-                          return acc;
-                        }, {} as Record<string, RecurringClass>);
-                        
-                        // If there are recurring classes, show a modal to select which one to bulk update
-                        const recurringClasses: RecurringClass[] = Object.values(parentClasses);
-                        
-                        if (recurringClasses.length === 0) {
-                          alert("No recurring classes found for this course.");
-                          return;
-                        }
-
-                        // Show a dialog to select which recurring class series to delete
-                        const select = document.createElement('select');
-                        select.id = 'deleteRecurringClassSelect';
-                        select.className = 'p-2 border rounded w-full mb-4';
-                        
-                        recurringClasses.forEach((cls: RecurringClass) => {
-                          const option = document.createElement('option');
-                          option.value = cls.id;
-                          option.textContent = `${cls.title} (${cls.count} classes)`;
-                          select.appendChild(option);
-                        });
-
-                        const dialog = document.createElement("div");
-                        dialog.className =
-                          "fixed inset-0 bg-black/50 flex items-center justify-center z-50";
-
-                        const content = document.createElement("div");
-                        content.className =
-                          "bg-white rounded-lg p-6 max-w-md w-full mx-4";
-                        content.innerHTML = `
-                          <h3 class="text-lg font-medium mb-2">Delete Recurring Class Series</h3>
-                          <p class="text-sm text-gray-500 mb-4">Choose a recurring class series to delete.</p>
-                          <div class="bg-yellow-50 p-3 mb-4 rounded border border-yellow-300 text-yellow-800 text-sm">
-                            <strong>Warning:</strong> This will delete all future instances of this class. This action cannot be undone.
-                          </div>
-                        `;
-
-                        content.appendChild(select);
-
-                        const buttonContainer = document.createElement("div");
-                        buttonContainer.className =
-                          "flex justify-end space-x-2 mt-4";
-
-                        const cancelButton = document.createElement("button");
-                        cancelButton.className =
-                          "px-4 py-2 border rounded text-gray-700 bg-white hover:bg-gray-50";
-                        cancelButton.textContent = "Cancel";
-                        cancelButton.onclick = () =>
-                          document.body.removeChild(dialog);
-
-                        const confirmButton = document.createElement("button");
-                        confirmButton.className =
-                          "px-4 py-2 rounded text-white bg-red-600 hover:bg-red-700";
-                        confirmButton.textContent = "Delete All";
-                        confirmButton.onclick = () => {
-                          const selectedClassId = select.value;
-
-                          // Show confirmation dialog
-                          if (
-                            confirm(
-                              "Are you sure you want to delete all instances of this class? This cannot be undone."
-                            )
-                          ) {
-                            deleteBulkClasses(selectedClassId);
-                          }
-
-                          document.body.removeChild(dialog);
-                        };
-
-                        buttonContainer.appendChild(cancelButton);
-                        buttonContainer.appendChild(confirmButton);
-                        content.appendChild(buttonContainer);
-
-                        dialog.appendChild(content);
-                        document.body.appendChild(dialog);
-
-                        // Make the dialog dismissable by clicking outside
-                        dialog.onclick = (e) => {
-                          if (e.target === dialog) {
-                            document.body.removeChild(dialog);
-                          }
-                        };
-                      }}
-                    >
-                      Delete Recurring Classes
-                    </Button>
+                <form onSubmit={handleAddAdmin} className="space-y-4">
+                  <div>
+                    <Label htmlFor="adminEmail">User Email</Label>
+                    <Input
+                      id="adminEmail"
+                      type="email"
+                      placeholder="user@example.com"
+                      value={adminEmail}
+                      onChange={(e) => setAdminEmail(e.target.value)}
+                    />
+                    <p className="text-sm text-gray-500 mt-1">
+                      The user must already have an account in the system.
+                    </p>
                   </div>
 
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Class
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Date & Time
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Meeting Link
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {classesForCourse.map((cls) => {
-                        const startDate = new Date(cls.start_time);
-                        const formattedDate = startDate.toLocaleDateString();
-                        const formattedTime = startDate.toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        });
+                  <Button
+                    type="submit"
+                    disabled={adminLoading}
+                    className="w-full"
+                  >
+                    {adminLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
+                        Processing...
+                      </>
+                    ) : (
+                      "Add as Administrator"
+                    )}
+                  </Button>
+                </form>
+                <div className="mt-8 pt-8 border-t border-gray-200">
+                  <h3 className="text-lg font-semibold mb-4">
+                    Revoke Admin Privileges
+                  </h3>
 
-                        // Calculate days until class
-                        const today = new Date();
-                        const daysUntil = Math.ceil(
-                          (startDate.getTime() - today.getTime()) /
-                            (1000 * 60 * 60 * 24)
-                        );
-                        const isUpcoming = daysUntil <= 7; // Consider classes within 7 days as upcoming
+                  {revokeError && (
+                    <div
+                      className="bg-red-50 p-4 mb-6 rounded-md flex items-start"
+                      id="revokeErrorMessage"
+                    >
+                      <AlertCircle className="text-red-500 mr-2 h-5 w-5 mt-0.5" />
+                      <span className="text-red-600">{revokeError}</span>
+                    </div>
+                  )}
 
-                        return (
-                          <tr
-                            key={cls.id}
-                            className={
-                              cls.id === selectedClassId
-                                ? "bg-blue-50"
-                                : isUpcoming
-                                ? "bg-yellow-50/30"
-                                : ""
-                            }
-                          >
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm font-medium text-gray-900">
-                                {cls.title}
-                              </div>
-                              {cls.recurring && (
-                                <div className="text-xs text-gray-500">
-                                  Recurring
-                                </div>
-                              )}
-                              {isUpcoming && (
-                                <div className="text-xs text-amber-600 font-medium">
-                                  {daysUntil === 0
-                                    ? "Today"
-                                    : daysUntil === 1
-                                    ? "Tomorrow"
-                                    : `In ${daysUntil} days`}
-                                </div>
-                              )}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-gray-900">
-                                {formattedDate}
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                {formattedTime}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              {selectedClassId === cls.id ? (
-                                <div className="flex items-center space-x-2">
-                                  <Input
-                                    value={editClassLink}
-                                    onChange={(e) =>
-                                      setEditClassLink(e.target.value)
-                                    }
-                                    placeholder="https://zoom.us/j/..."
-                                    className="text-sm"
-                                  />
-                                </div>
-                              ) : (
-                                <div className="text-sm text-gray-900 truncate max-w-xs">
-                                  {cls.meeting_link || "No link set"}
-                                </div>
-                              )}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                              {selectedClassId === cls.id ? (
-                                <div className="flex justify-end space-x-2">
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => {
-                                      setSelectedClassId("");
-                                      setEditClassLink("");
-                                    }}
-                                  >
-                                    Cancel
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    disabled={editingClass}
-                                    onClick={() =>
-                                      updateClassMeetingLink(
-                                        cls.id,
-                                        editClassLink
-                                      )
-                                    }
-                                  >
-                                    {editingClass ? (
-                                      <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
-                                        Saving...
-                                      </>
-                                    ) : (
-                                      "Save"
-                                    )}
-                                  </Button>
-                                </div>
-                              ) : (
-                                <div className="flex justify-end space-x-2">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => {
-                                      setSelectedClassId(cls.id);
-                                      setEditClassLink(cls.meeting_link || "");
-                                    }}
-                                  >
-                                    Edit Link
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={() => confirmDeleteClass(cls)}
-                                  >
-                                    Delete
-                                  </Button>
-                                </div>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                  {revokeSuccess && (
+                    <div className="bg-green-50 p-4 mb-6 rounded-md flex items-start">
+                      <CheckCircle2 className="text-green-500 mr-2 h-5 w-5 mt-0.5" />
+                      <span className="text-green-600">
+                        Admin privileges revoked successfully!
+                      </span>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleRevokeAdmin} className="space-y-4">
+                    <div>
+                      <Label htmlFor="revokeEmail">Admin Email</Label>
+                      <Input
+                        id="revokeEmail"
+                        type="email"
+                        placeholder="admin@example.com"
+                        value={revokeEmail}
+                        onChange={(e) => setRevokeEmail(e.target.value)}
+                      />
+                      <p className="text-sm text-gray-500 mt-1">
+                        Enter the email of the admin whose privileges you want
+                        to revoke.
+                      </p>
+                    </div>
+
+                    <Button
+                      type="submit"
+                      disabled={revokeLoading}
+                      variant="destructive"
+                      className="w-full"
+                    >
+                      {revokeLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
+                          Processing...
+                        </>
+                      ) : (
+                        "Revoke Admin Privileges"
+                      )}
+                    </Button>
+                  </form>
                 </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        {/* You can add other admin functionality here */}
+          {/* Schedule Classes Tab */}
+          <TabsContent value="schedule">
+            <Card className="mb-8" id="scheduleSection">
+              <CardHeader>
+                <CardTitle>Schedule Classes</CardTitle>
+                <CardDescription>
+                  Create class schedules for your courses
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {classSchedulingError && (
+                  <div className="bg-red-50 p-4 mb-6 rounded-md flex items-start">
+                    <AlertCircle className="text-red-500 mr-2 h-5 w-5 mt-0.5" />
+                    <span className="text-red-600">{classSchedulingError}</span>
+                  </div>
+                )}
+
+                {classSchedulingSuccess && (
+                  <div className="bg-green-50 p-4 mb-6 rounded-md flex items-start">
+                    <CheckCircle2 className="text-green-500 mr-2 h-5 w-5 mt-0.5" />
+                    <span className="text-green-600">
+                      {scheduleType === "one-time"
+                        ? "Class scheduled successfully!"
+                        : "Recurring schedule created successfully!"}
+                    </span>
+                  </div>
+                )}
+
+                <Tabs
+                  defaultValue="one-time"
+                  onValueChange={(val) =>
+                    setScheduleType(val as "one-time" | "recurring")
+                  }
+                >
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="one-time">One-time Class</TabsTrigger>
+                    <TabsTrigger value="recurring">
+                      Recurring Schedule
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="one-time" className="space-y-4 pt-4">
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        scheduleOneTimeClass();
+                      }}
+                      className="space-y-4"
+                    >
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="courseSingle">Select Course</Label>
+                          <Select
+                            onValueChange={setSelectedCourseId}
+                            value={selectedCourseId}
+                          >
+                            <SelectTrigger id="courseSingle">
+                              <SelectValue placeholder="Select a course" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {courses.map((course) => (
+                                <SelectItem key={course.id} value={course.id}>
+                                  {course.title}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="classTitle">Class Title</Label>
+                          <Input
+                            id="classTitle"
+                            placeholder="Introduction Session"
+                            value={classTitle}
+                            onChange={(e) => setClassTitle(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="classDescription">
+                          Description (Optional)
+                        </Label>
+                        <Textarea
+                          id="classDescription"
+                          placeholder="What will be covered in this class..."
+                          value={classDescription}
+                          onChange={(e) => setClassDescription(e.target.value)}
+                          rows={2}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <Label htmlFor="classDate">Date</Label>
+                          <Input
+                            id="classDate"
+                            type="date"
+                            value={classDate}
+                            onChange={(e) => setClassDate(e.target.value)}
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="startTime">Start Time</Label>
+                          <Input
+                            id="startTime"
+                            type="time"
+                            value={startTime}
+                            onChange={(e) => setStartTime(e.target.value)}
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="duration">Duration (minutes)</Label>
+                          <Input
+                            id="duration"
+                            type="number"
+                            min="15"
+                            step="15"
+                            value={duration.toString()}
+                            onChange={(e) =>
+                              setDuration(parseInt(e.target.value) || 60)
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="meetingLink">
+                          Meeting Link (Optional)
+                        </Label>
+                        <Input
+                          id="meetingLink"
+                          placeholder="https://zoom.us/j/..."
+                          value={meetingLink}
+                          onChange={(e) => setMeetingLink(e.target.value)}
+                        />
+                      </div>
+
+                      <Button type="submit" className="w-full">
+                        Schedule Class
+                      </Button>
+                    </form>
+                  </TabsContent>
+
+                  <TabsContent value="recurring" className="space-y-4 pt-4">
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        createRecurringSchedule();
+                      }}
+                      className="space-y-4"
+                    >
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="courseRecurring">Select Course</Label>
+                          <Select
+                            onValueChange={setSelectedCourseId}
+                            value={selectedCourseId}
+                          >
+                            <SelectTrigger id="courseRecurring">
+                              <SelectValue placeholder="Select a course" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {courses.map((course) => (
+                                <SelectItem key={course.id} value={course.id}>
+                                  {course.title}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="classTitleRecurring">
+                            Class Title
+                          </Label>
+                          <Input
+                            id="classTitleRecurring"
+                            placeholder="Weekly Session"
+                            value={classTitle}
+                            onChange={(e) => setClassTitle(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label>Select Days</Label>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {[
+                            "Sun",
+                            "Mon",
+                            "Tue",
+                            "Wed",
+                            "Thu",
+                            "Fri",
+                            "Sat",
+                          ].map((day, idx) => (
+                            <Button
+                              key={idx}
+                              type="button"
+                              variant={
+                                recurringDays.includes(idx)
+                                  ? "default"
+                                  : "outline"
+                              }
+                              size="sm"
+                              onClick={() => {
+                                if (recurringDays.includes(idx)) {
+                                  setRecurringDays(
+                                    recurringDays.filter((d) => d !== idx)
+                                  );
+                                } else {
+                                  setRecurringDays([...recurringDays, idx]);
+                                }
+                              }}
+                            >
+                              {day}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="startDate">Start Date</Label>
+                          <Input
+                            id="startDate"
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="endDate">End Date</Label>
+                          <Input
+                            id="endDate"
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Replace your existing time slots section with this */}
+                      <div>
+                        <Label>Class Times</Label>
+                        <p className="text-sm text-gray-500 mb-2">
+                          Add class times for the days you selected above:{" "}
+                          {recurringDays
+                            .map(
+                              (day) =>
+                                [
+                                  "Sunday",
+                                  "Monday",
+                                  "Tuesday",
+                                  "Wednesday",
+                                  "Thursday",
+                                  "Friday",
+                                  "Saturday",
+                                ][day]
+                            )
+                            .join(", ")}
+                        </p>
+
+                        <div className="mt-2 space-y-3">
+                          {/* Display existing time slots */}
+                          {timeSlots.map((slot, idx) => (
+                            <div key={idx} className="flex items-center gap-2">
+                              <div className="bg-slate-100 px-3 py-2 rounded-md flex-1">
+                                {
+                                  [
+                                    "Sunday",
+                                    "Monday",
+                                    "Tuesday",
+                                    "Wednesday",
+                                    "Thursday",
+                                    "Friday",
+                                    "Saturday",
+                                  ][slot.day]
+                                }{" "}
+                                at {slot.time}
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeTimeSlot(idx)}
+                              >
+                                <X size={16} />
+                              </Button>
+                            </div>
+                          ))}
+
+                          {/* Only show the add time form if there are recurring days selected */}
+                          {recurringDays.length > 0 && (
+                            <div className="grid grid-cols-3 gap-2 mt-2">
+                              <Select
+                                onValueChange={(val) =>
+                                  setSelectedDay(parseInt(val))
+                                }
+                                value={selectedDay?.toString() || ""}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select day" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {/* Only show days that are in recurringDays */}
+                                  {recurringDays
+                                    .filter((dayIndex) => {
+                                      // To prevent duplicate time slots, check if this day+time combo exists
+                                      if (selectedTime) {
+                                        return !timeSlots.some(
+                                          (slot) =>
+                                            slot.day === dayIndex &&
+                                            slot.time === selectedTime
+                                        );
+                                      }
+                                      return true;
+                                    })
+                                    .map((dayIndex) => (
+                                      <SelectItem
+                                        key={dayIndex}
+                                        value={dayIndex.toString()}
+                                      >
+                                        {
+                                          [
+                                            "Sunday",
+                                            "Monday",
+                                            "Tuesday",
+                                            "Wednesday",
+                                            "Thursday",
+                                            "Friday",
+                                            "Saturday",
+                                          ][dayIndex]
+                                        }
+                                      </SelectItem>
+                                    ))}
+                                </SelectContent>
+                              </Select>
+
+                              <Input
+                                type="time"
+                                value={selectedTime}
+                                onChange={(e) =>
+                                  setSelectedTime(e.target.value)
+                                }
+                                placeholder="Select time"
+                              />
+
+                              <Button
+                                type="button"
+                                onClick={() => {
+                                  if (
+                                    selectedDay !== undefined &&
+                                    selectedTime
+                                  ) {
+                                    addTimeSlot(selectedDay, selectedTime);
+                                  }
+                                }}
+                                disabled={
+                                  selectedDay === undefined || !selectedTime
+                                }
+                              >
+                                Add Time
+                              </Button>
+                            </div>
+                          )}
+
+                          {/* Show message if no days are selected */}
+                          {recurringDays.length === 0 && (
+                            <div className="p-4 bg-gray-50 rounded-md text-center text-gray-500">
+                              Please select days of the week above before adding
+                              class times.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="meetingLinkRecurring">
+                          Default Meeting Link
+                        </Label>
+                        <Input
+                          id="meetingLinkRecurring"
+                          placeholder="https://zoom.us/j/..."
+                          value={meetingLink}
+                          onChange={(e) => setMeetingLink(e.target.value)}
+                        />
+                        <p className="text-sm text-gray-500 mt-1">
+                          This link will be used for all classes in this
+                          schedule unless overridden individually.
+                        </p>
+                      </div>
+
+                      <Button type="submit" className="w-full mt-6">
+                        Create Schedule
+                      </Button>
+                    </form>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Manage Classes Tab */}
+          <TabsContent value="classes">
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle>Manage Classes</CardTitle>
+                <CardDescription>
+                  Update meeting links or delete upcoming classes
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {editClassError && (
+                  <div className="bg-red-50 p-4 mb-6 rounded-md flex items-start">
+                    <AlertCircle className="text-red-500 mr-2 h-5 w-5 mt-0.5" />
+                    <span className="text-red-600">{editClassError}</span>
+                  </div>
+                )}
+
+                {editClassSuccess && (
+                  <div className="bg-green-50 p-4 mb-6 rounded-md flex items-start">
+                    <CheckCircle2 className="text-green-500 mr-2 h-5 w-5 mt-0.5" />
+                    <span className="text-green-600">
+                      Class updated successfully!
+                    </span>
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="manageCourse">Select Course</Label>
+                    <Select
+                      value={manageCourseId}
+                      onValueChange={(val) => {
+                        setManageCourseId(val);
+                        fetchClassesForCourse(val);
+                      }}
+                    >
+                      <SelectTrigger id="manageCourse">
+                        <SelectValue placeholder="Select a course" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {courses.map((course) => (
+                          <SelectItem key={course.id} value={course.id}>
+                            {course.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Only upcoming classes are shown. Past classes cannot be
+                      modified.
+                    </p>
+                  </div>
+
+                  {loadingClasses && (
+                    <div className="py-8 text-center">
+                      <Loader2 className="h-8 w-8 animate-spin text-gray-500 mx-auto" />
+                      <p className="mt-2 text-gray-500">Loading classes...</p>
+                    </div>
+                  )}
+
+                  {!loadingClasses &&
+                    classesForCourse.length === 0 &&
+                    manageCourseId && (
+                      <div className="py-8 text-center">
+                        <p className="text-gray-500">
+                          No upcoming classes found for this course.
+                        </p>
+                        <Button
+                          variant="outline"
+                          className="mt-4"
+                          onClick={() => {
+                            setScheduleType("one-time");
+                            setSelectedCourseId(manageCourseId);
+                            // Scroll to the schedule section
+                            document
+                              .querySelector("#scheduleSection")
+                              ?.scrollIntoView({ behavior: "smooth" });
+                          }}
+                        >
+                          Create a Class
+                        </Button>
+                      </div>
+                    )}
+
+                  {!loadingClasses && classesForCourse.length > 0 && (
+                    <div className="border rounded-md overflow-hidden">
+                      {/* Bulk operations toolbar */}
+                      <div className="mb-4 flex flex-wrap gap-2 p-4 bg-gray-50">
+                        <Button
+                          variant="secondary"
+                          onClick={() => {
+                            // Group classes by parent class_id to show recurring classes
+                            const parentClasses: Record<
+                              string,
+                              RecurringClass
+                            > = classesForCourse.reduce((acc, cls) => {
+                              if (cls.recurring) {
+                                if (!acc[cls.class_id]) {
+                                  acc[cls.class_id] = {
+                                    id: cls.class_id,
+                                    title: cls.parent_title || cls.title,
+                                    count: 1,
+                                  };
+                                } else {
+                                  acc[cls.class_id].count++;
+                                }
+                              }
+                              return acc;
+                            }, {} as Record<string, RecurringClass>);
+
+                            // If there are recurring classes, show a modal to select which one to bulk update
+                            const recurringClasses: RecurringClass[] =
+                              Object.values(parentClasses);
+
+                            if (recurringClasses.length === 0) {
+                              alert(
+                                "No recurring classes found for this course."
+                              );
+                              return;
+                            }
+
+                            // Show a dialog to select which recurring class series to update
+                            const select = document.createElement("select");
+                            select.id = "recurringClassSelect";
+                            select.className = "p-2 border rounded w-full mb-4";
+
+                            recurringClasses.forEach((cls: RecurringClass) => {
+                              const option = document.createElement("option");
+                              option.value = cls.id;
+                              option.textContent = `${cls.title} (${cls.count} classes)`;
+                              select.appendChild(option);
+                            });
+
+                            const dialog = document.createElement("div");
+                            dialog.className =
+                              "fixed inset-0 bg-black/50 flex items-center justify-center z-50";
+
+                            const content = document.createElement("div");
+                            content.className =
+                              "bg-white rounded-lg p-6 max-w-md w-full mx-4";
+                            content.innerHTML = `
+                              <h3 class="text-lg font-medium mb-2">Select Recurring Class Series</h3>
+                              <p class="text-sm text-gray-500 mb-4">Choose a recurring class series to update all meeting links at once.</p>
+                            `;
+
+                            content.appendChild(select);
+
+                            const buttonContainer =
+                              document.createElement("div");
+                            buttonContainer.className =
+                              "flex justify-end space-x-2 mt-4";
+
+                            const cancelButton =
+                              document.createElement("button");
+                            cancelButton.className =
+                              "px-4 py-2 border rounded text-gray-700 bg-white hover:bg-gray-50";
+                            cancelButton.textContent = "Cancel";
+                            cancelButton.onclick = () =>
+                              document.body.removeChild(dialog);
+
+                            const confirmButton =
+                              document.createElement("button");
+                            confirmButton.className =
+                              "px-4 py-2 rounded text-white bg-blue-600 hover:bg-blue-700";
+                            confirmButton.textContent = "Continue";
+                            confirmButton.onclick = () => {
+                              const selectedClassId = select.value;
+                              const selectedClass = recurringClasses.find(
+                                (c: RecurringClass) => c.id === selectedClassId
+                              );
+
+                              if (selectedClass) {
+                                setBulkUpdateClassId(selectedClassId);
+                                setBulkUpdateParentTitle(selectedClass.title);
+                                setBulkUpdateLink("");
+                                setBulkUpdateModalOpen(true);
+                              }
+
+                              document.body.removeChild(dialog);
+                            };
+
+                            buttonContainer.appendChild(cancelButton);
+                            buttonContainer.appendChild(confirmButton);
+                            content.appendChild(buttonContainer);
+
+                            dialog.appendChild(content);
+                            document.body.appendChild(dialog);
+
+                            // Make the dialog dismissable by clicking outside
+                            dialog.onclick = (e) => {
+                              if (e.target === dialog) {
+                                document.body.removeChild(dialog);
+                              }
+                            };
+                          }}
+                        >
+                          Bulk Update Meeting Links
+                        </Button>
+
+                        <Button
+                          variant="destructive"
+                          onClick={() => {
+                            // Group classes by parent class_id to show recurring classes
+                            const parentClasses: Record<
+                              string,
+                              RecurringClass
+                            > = classesForCourse.reduce((acc, cls) => {
+                              if (cls.recurring) {
+                                if (!acc[cls.class_id]) {
+                                  acc[cls.class_id] = {
+                                    id: cls.class_id,
+                                    title: cls.parent_title || cls.title,
+                                    count: 1,
+                                  };
+                                } else {
+                                  acc[cls.class_id].count++;
+                                }
+                              }
+                              return acc;
+                            }, {} as Record<string, RecurringClass>);
+
+                            // If there are recurring classes, show a modal to select which one to bulk update
+                            const recurringClasses: RecurringClass[] =
+                              Object.values(parentClasses);
+
+                            if (recurringClasses.length === 0) {
+                              alert(
+                                "No recurring classes found for this course."
+                              );
+                              return;
+                            }
+
+                            // Show a dialog to select which recurring class series to delete
+                            const select = document.createElement("select");
+                            select.id = "deleteRecurringClassSelect";
+                            select.className = "p-2 border rounded w-full mb-4";
+
+                            recurringClasses.forEach((cls: RecurringClass) => {
+                              const option = document.createElement("option");
+                              option.value = cls.id;
+                              option.textContent = `${cls.title} (${cls.count} classes)`;
+                              select.appendChild(option);
+                            });
+
+                            const dialog = document.createElement("div");
+                            dialog.className =
+                              "fixed inset-0 bg-black/50 flex items-center justify-center z-50";
+
+                            const content = document.createElement("div");
+                            content.className =
+                              "bg-white rounded-lg p-6 max-w-md w-full mx-4";
+                            content.innerHTML = `
+                              <h3 class="text-lg font-medium mb-2">Delete Recurring Class Series</h3>
+                              <p class="text-sm text-gray-500 mb-4">Choose a recurring class series to delete.</p>
+                              <div class="bg-yellow-50 p-3 mb-4 rounded border border-yellow-300 text-yellow-800 text-sm">
+                                <strong>Warning:</strong> This will delete all future instances of this class. This action cannot be undone.
+                              </div>
+                            `;
+
+                            content.appendChild(select);
+
+                            const buttonContainer =
+                              document.createElement("div");
+                            buttonContainer.className =
+                              "flex justify-end space-x-2 mt-4";
+
+                            const cancelButton =
+                              document.createElement("button");
+                            cancelButton.className =
+                              "px-4 py-2 border rounded text-gray-700 bg-white hover:bg-gray-50";
+                            cancelButton.textContent = "Cancel";
+                            cancelButton.onclick = () =>
+                              document.body.removeChild(dialog);
+
+                            const confirmButton =
+                              document.createElement("button");
+                            confirmButton.className =
+                              "px-4 py-2 rounded text-white bg-red-600 hover:bg-red-700";
+                            confirmButton.textContent = "Delete All";
+                            confirmButton.onclick = () => {
+                              const selectedClassId = select.value;
+
+                              // Show confirmation dialog
+                              if (
+                                confirm(
+                                  "Are you sure you want to delete all instances of this class? This cannot be undone."
+                                )
+                              ) {
+                                deleteBulkClasses(selectedClassId);
+                              }
+
+                              document.body.removeChild(dialog);
+                            };
+
+                            buttonContainer.appendChild(cancelButton);
+                            buttonContainer.appendChild(confirmButton);
+                            content.appendChild(buttonContainer);
+
+                            dialog.appendChild(content);
+                            document.body.appendChild(dialog);
+
+                            // Make the dialog dismissable by clicking outside
+                            dialog.onclick = (e) => {
+                              if (e.target === dialog) {
+                                document.body.removeChild(dialog);
+                              }
+                            };
+                          }}
+                        >
+                          Delete Recurring Classes
+                        </Button>
+                      </div>
+
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th
+                              scope="col"
+                              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                            >
+                              Class
+                            </th>
+                            <th
+                              scope="col"
+                              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                            >
+                              Date & Time
+                            </th>
+                            <th
+                              scope="col"
+                              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                            >
+                              Meeting Link
+                            </th>
+                            <th
+                              scope="col"
+                              className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                            >
+                              Actions
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {classesForCourse.map((cls) => {
+                            const startDate = new Date(cls.start_time);
+                            const formattedDate =
+                              startDate.toLocaleDateString();
+                            const formattedTime = startDate.toLocaleTimeString(
+                              [],
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
+                            );
+
+                            // Calculate days until class
+                            const today = new Date();
+                            const daysUntil = Math.ceil(
+                              (startDate.getTime() - today.getTime()) /
+                                (1000 * 60 * 60 * 24)
+                            );
+                            const isUpcoming = daysUntil <= 7; // Consider classes within 7 days as upcoming
+
+                            return (
+                              <tr
+                                key={cls.id}
+                                className={
+                                  cls.id === selectedClassId
+                                    ? "bg-blue-50"
+                                    : isUpcoming
+                                    ? "bg-yellow-50/30"
+                                    : ""
+                                }
+                              >
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {cls.title}
+                                  </div>
+                                  {cls.recurring && (
+                                    <div className="text-xs text-gray-500">
+                                      Recurring
+                                    </div>
+                                  )}
+                                  {isUpcoming && (
+                                    <div className="text-xs text-amber-600 font-medium">
+                                      {daysUntil === 0
+                                        ? "Today"
+                                        : daysUntil === 1
+                                        ? "Tomorrow"
+                                        : `In ${daysUntil} days`}
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm text-gray-900">
+                                    {formattedDate}
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    {formattedTime}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  {selectedClassId === cls.id ? (
+                                    <div className="flex items-center space-x-2">
+                                      <Input
+                                        value={editClassLink}
+                                        onChange={(e) =>
+                                          setEditClassLink(e.target.value)
+                                        }
+                                        placeholder="https://zoom.us/j/..."
+                                        className="text-sm"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <div className="text-sm text-gray-900 truncate max-w-xs">
+                                      {cls.meeting_link || "No link set"}
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                  {selectedClassId === cls.id ? (
+                                    <div className="flex justify-end space-x-2">
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => {
+                                          setSelectedClassId("");
+                                          setEditClassLink("");
+                                        }}
+                                      >
+                                        Cancel
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        disabled={editingClass}
+                                        onClick={() =>
+                                          updateClassMeetingLink(
+                                            cls.id,
+                                            editClassLink
+                                          )
+                                        }
+                                      >
+                                        {editingClass ? (
+                                          <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
+                                            Saving...
+                                          </>
+                                        ) : (
+                                          "Save"
+                                        )}
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex justify-end space-x-2">
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                          setSelectedClassId(cls.id);
+                                          setEditClassLink(
+                                            cls.meeting_link || ""
+                                          );
+                                        }}
+                                      >
+                                        Edit Link
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        onClick={() => confirmDeleteClass(cls)}
+                                      >
+                                        Delete
+                                      </Button>
+                                    </div>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
       <Footer />
       {/* Add this at the end of your component return, before the closing div */}

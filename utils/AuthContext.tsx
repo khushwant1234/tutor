@@ -1,7 +1,7 @@
-// utils/AuthContext.tsx
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import supabase from '@/utils/supabase/client';
+"use client";
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import supabase from "@/utils/supabase/client";
 
 type User = {
   id: string;
@@ -32,7 +32,9 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -42,29 +44,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const checkAdmin = async (): Promise<boolean> => {
     try {
       // Get current user
-      const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
-      
+      const {
+        data: { user: currentUser },
+        error: userError,
+      } = await supabase.auth.getUser();
+
       if (userError || !currentUser) {
-        console.error('Error checking admin status:', userError);
+        console.error("Error checking admin status:", userError);
         setIsAdmin(false);
         return false;
       }
 
       // Check admin role in user_metadata
-      if (currentUser.user_metadata?.role === 'admin') {
+      if (currentUser.user_metadata?.role === "admin") {
         setIsAdmin(true);
         return true;
       }
 
       // Or check admin table
       const { data: adminData, error: adminError } = await supabase
-        .from('admins')
-        .select('*')
-        .eq('user_id', currentUser.id)
+        .from("admins")
+        .select("*")
+        .eq("user_id", currentUser.id)
         .single();
 
       if (adminError) {
-        console.error('Error checking admin table:', adminError);
+        console.error("Error checking admin table:", adminError);
         setIsAdmin(false);
         return false;
       }
@@ -72,7 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsAdmin(!!adminData);
       return !!adminData;
     } catch (error) {
-      console.error('Admin check error:', error);
+      console.error("Admin check error:", error);
       setIsAdmin(false);
       return false;
     }
@@ -82,15 +87,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshSession = async () => {
     setIsLoading(true);
     try {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
+
       if (error) {
-        console.error('Error refreshing session:', error);
+        console.error("Error refreshing session:", error);
         setUser(null);
         setIsAdmin(false);
         return;
       }
-      
+
       if (session) {
         setUser(session.user);
         await checkAdmin();
@@ -99,7 +107,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsAdmin(false);
       }
     } catch (error) {
-      console.error('Session refresh error:', error);
+      console.error("Session refresh error:", error);
       setUser(null);
       setIsAdmin(false);
     } finally {
@@ -112,29 +120,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await supabase.auth.signOut();
     setUser(null);
     setIsAdmin(false);
-    router.push('/login');
+    router.push("/login");
   };
 
   // Initialize and listen for auth changes
   useEffect(() => {
     const initAuth = async () => {
       setIsLoading(true);
-      
+
       try {
         // Get initial session
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+
         if (error) {
-          console.error('Auth initialization error:', error);
+          console.error("Auth initialization error:", error);
           return;
         }
-        
+
         if (session) {
           setUser(session.user);
           await checkAdmin();
         }
       } catch (error) {
-        console.error('Auth initialization error:', error);
+        console.error("Auth initialization error:", error);
       } finally {
         setIsLoading(false);
       }
@@ -143,9 +154,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initAuth();
 
     // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event);
-      
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event);
+
       if (session) {
         setUser(session.user);
         await checkAdmin();
@@ -153,7 +166,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
         setIsAdmin(false);
       }
-      
+
       setIsLoading(false);
     });
 
@@ -164,7 +177,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, isAdmin, checkAdmin, signOut, refreshSession }}>
+    <AuthContext.Provider
+      value={{ user, isLoading, isAdmin, checkAdmin, signOut, refreshSession }}
+    >
       {children}
     </AuthContext.Provider>
   );
