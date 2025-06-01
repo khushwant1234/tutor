@@ -138,7 +138,7 @@ const Dashboard = () => {
         .in("id", courseIds);
 
       if (courseError) throw courseError;
-      setEnrolledCourses(courseData || []);      // Get upcoming classes for these courses
+      setEnrolledCourses(courseData || []); // Get upcoming classes for these courses
       const now = new Date().toISOString();
       const nextWeek = new Date();
       nextWeek.setDate(nextWeek.getDate() + 7);
@@ -172,9 +172,10 @@ const Dashboard = () => {
         throw classError;
       }
 
-      console.log("Class data received:", classData);      if (classData && classData.length > 0) {
+      console.log("Class data received:", classData);
+      if (classData && classData.length > 0) {
         const upcoming: UpcomingClass[] = [];
-        
+
         classData
           .filter((cls) => cls.course_classes)
           .forEach((cls) => {
@@ -185,11 +186,11 @@ const Dashboard = () => {
             );
 
             // Get course_id from the course_classes relationship
-            const courseClass = Array.isArray(cls.course_classes) 
-              ? cls.course_classes[0] 
+            const courseClass = Array.isArray(cls.course_classes)
+              ? cls.course_classes[0]
               : cls.course_classes;
             const courseId = courseClass?.course_id;
-            
+
             if (!courseId || courseId === "unknown") {
               console.log("Missing or invalid course_id for class:", cls.id);
               return;
