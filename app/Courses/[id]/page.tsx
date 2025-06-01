@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle } from "lucide-react";
 import supabase from "@/utils/supabase/client";
 import Image from "next/image";
+import CourseSpecificNotes from "@/components/courses/CourseSpecificNotes";
+import CourseScheduledClasses from "@/components/courses/CourseScheduledClasses";
 
 interface Course {
   id: string;
@@ -15,7 +17,7 @@ interface Course {
   description: string;
   image_url?: string;
   instructor?: string;
-  preview_url?: string; 
+  preview_url?: string;
   other_info?: string;
   isEnrolled?: boolean;
 }
@@ -37,14 +39,16 @@ export default function CourseDetails() {
   useEffect(() => {
     async function fetchCourseAndEnrollment() {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         setUser(user as UserData);
 
         // Fetch course details
         const { data: courseData, error: courseError } = await supabase
-          .from('courses')
-          .select('*')
-          .eq('id', params.id)
+          .from("courses")
+          .select("*")
+          .eq("id", params.id)
           .single();
 
         if (courseError) throw courseError;
@@ -53,10 +57,10 @@ export default function CourseDetails() {
         // Check enrollment if user is logged in
         if (user) {
           const { data: enrollmentData } = await supabase
-            .from('user_data')
-            .select('id')
-            .eq('user_id', user.id)
-            .eq('course_id', params.id)
+            .from("user_data")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("course_id", params.id)
             .maybeSingle();
 
           setIsEnrolled(!!enrollmentData);
@@ -74,34 +78,31 @@ export default function CourseDetails() {
   const handleEnroll = async () => {
     try {
       setEnrolling(true);
-      
+
       if (!user) {
         alert("Please log in to enroll in courses");
         return;
       }
-      
-      const { error } = await supabase
-        .from('user_data')
-        .insert([
-          {
-            user_id: user.id,
-            course_id: params.id,
-          }
-        ]);
-        
+
+      const { error } = await supabase.from("user_data").insert([
+        {
+          user_id: user.id,
+          course_id: params.id,
+        },
+      ]);
+
       if (error) throw error;
       setIsEnrolled(true);
-      
+
       // Add this - show success message before redirecting
       alert("Successfully enrolled! Redirecting to dashboard...");
-      
+
       // Redirect to dashboard to see updated classes
       setTimeout(() => {
-        router.push('/Dashboard');
+        router.push("/Dashboard");
         // Force a refresh of the page to ensure data is reloaded
         router.refresh();
       }, 1500);
-      
     } catch (err: unknown) {
       console.error("Error enrolling in course:", err);
       alert(err instanceof Error ? err.message : "Failed to enroll in course");
@@ -113,13 +114,14 @@ export default function CourseDetails() {
   // Add this function to extract YouTube video ID
   const getYoutubeEmbedUrl = (url: string) => {
     if (!url) return null;
-    
+
     // Handle different YouTube URL formats
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const regExp =
+      /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
-    
-    return match && match[2].length === 11 
-      ? `https://www.youtube.com/embed/${match[2]}` 
+
+    return match && match[2].length === 11
+      ? `https://www.youtube.com/embed/${match[2]}`
       : null;
   };
 
@@ -163,13 +165,13 @@ export default function CourseDetails() {
               />
             </div>
           )}
-
           {course.preview_url && (
             <div className="mb-6">
               <h2 className="text-2xl font-semibold mb-3">Course Preview</h2>
               <div className="relative aspect-video w-full rounded-lg overflow-hidden">
+                {" "}
                 <iframe
-                  src={getYoutubeEmbedUrl(course.preview_url)}
+                  src={getYoutubeEmbedUrl(course.preview_url) || undefined}
                   title="YouTube video player"
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -179,30 +181,27 @@ export default function CourseDetails() {
               </div>
             </div>
           )}
-
           <h1 className="text-4xl font-bold mb-4">{course.title}</h1>
-          
           {course.instructor && (
             <p className="text-lg text-gray-600 mb-4">
               Instructor: {course.instructor}
             </p>
           )}
-
           <div className="prose max-w-none mb-8">
             <h2 className="text-2xl font-semibold mb-3">Course Description</h2>
             <div className="whitespace-pre-wrap">{course.description}</div>
           </div>
-
           {/* Add this after the course description in your course details page */}
           {course.other_info && (
             <div className="mt-8">
-              <h2 className="text-2xl font-semibold mb-3">Additional Information</h2>
+              <h2 className="text-2xl font-semibold mb-3">
+                Additional Information
+              </h2>
               <div className="prose max-w-none bg-gray-50 p-6 rounded-lg border border-gray-200">
                 <div className="whitespace-pre-wrap">{course.other_info}</div>
               </div>
             </div>
           )}
-
           <div className="mt-8">
             {isEnrolled ? (
               <div className="flex items-center text-green-600">
@@ -210,24 +209,49 @@ export default function CourseDetails() {
                 <span className="text-lg">You are enrolled in this course</span>
               </div>
             ) : (
-              <Button 
-                onClick={handleEnroll} 
-                disabled={enrolling}
-                size="lg"
-              >
+              <Button onClick={handleEnroll} disabled={enrolling} size="lg">
                 {enrolling ? (
                   <>
                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                     Enrolling...
                   </>
-                ) : 'Enroll in Course'}
+                ) : (
+                  "Enroll in Course"
+                )}
               </Button>
             )}
-          </div>
+          </div>{" "}
+          {/* Course Notes for Enrolled Students */}
+          {isEnrolled && user?.id && (
+            <>
+              {/* Scheduled Classes Section */}
+              <div className="mt-12 border-t pt-8">
+                <h2 className="text-2xl font-semibold mb-6">
+                  Scheduled Classes
+                </h2>
+                <CourseScheduledClasses
+                  courseId={params.id as string}
+                  userId={user.id}
+                  courseName={course.title}
+                />
+              </div>
+
+              {/* Course Materials & Notes Section */}
+              <div className="mt-12 border-t pt-8">
+                <h2 className="text-2xl font-semibold mb-6">
+                  Course Materials & Notes
+                </h2>
+                <CourseSpecificNotes
+                  courseId={params.id as string}
+                  userId={user.id}
+                  courseName={course.title}
+                />
+              </div>
+            </>
+          )}
         </div>
       </div>
       <Footer />
     </div>
   );
 }
-

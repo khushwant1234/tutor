@@ -3,7 +3,7 @@ import React from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import supabase from "@/utils/supabase/client";
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
 import { ShieldCheck } from "lucide-react"; // Import ShieldCheck icon
 
 interface PagesProps {
@@ -17,22 +17,30 @@ const Pages = ({ isLoggedIn, isAdmin, userEmail }: PagesProps) => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.push('/login');
+    router.push("/login");
   };
 
   return (
     <div className="hidden sm:flex gap-5 items-center">
       <Link href="/" className="text-white hover:text-gray-300">
         Home
-      </Link>
+      </Link>{" "}
       {isLoggedIn && (
         <Link href="/Dashboard" className="text-white hover:text-gray-300">
           Dashboard
         </Link>
       )}
+      {isLoggedIn && (
+        <Link href="/Notes" className="text-white hover:text-gray-300">
+          Notes
+        </Link>
+      )}
       {/* Add Admin link that only shows up for admin users */}
       {isLoggedIn && isAdmin && (
-        <Link href="/Admin" className="text-white hover:text-gray-300 flex items-center">
+        <Link
+          href="/Admin"
+          className="text-white hover:text-gray-300 flex items-center"
+        >
           <ShieldCheck className="mr-1 h-4 w-4" />
           Admin
         </Link>
@@ -40,9 +48,11 @@ const Pages = ({ isLoggedIn, isAdmin, userEmail }: PagesProps) => {
       <Link href="/Courses" className="text-white hover:text-gray-300">
         Explore Courses
       </Link>
-      
       {!isLoggedIn && (
-        <Link href="/Login" className="text-white hover:text-gray-300 underline">
+        <Link
+          href="/Login"
+          className="text-white hover:text-gray-300 underline"
+        >
           Login
         </Link>
       )}
