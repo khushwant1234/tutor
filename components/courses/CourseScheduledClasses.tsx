@@ -124,15 +124,14 @@ export default function CourseScheduledClasses({
       setLoading(false);
     }
   };
-
   const formatDateTime = (dateTimeString: string) => {
     const date = new Date(dateTimeString);
     return {
-      date: date.toLocaleDateString(undefined, {
+      date: date.toLocaleDateString("en-GB", {
         weekday: "long",
+        day: "2-digit",
+        month: "2-digit",
         year: "numeric",
-        month: "long",
-        day: "numeric",
       }),
       time: date.toLocaleTimeString(undefined, {
         hour: "2-digit",

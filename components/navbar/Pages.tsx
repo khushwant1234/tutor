@@ -31,6 +31,11 @@ const Pages = ({ isLoggedIn, isAdmin, userEmail }: PagesProps) => {
         </Link>
       )}
       {isLoggedIn && (
+        <Link href="/Calendar" className="text-white hover:text-gray-300">
+          Calendar
+        </Link>
+      )}
+      {isLoggedIn && (
         <Link href="/Notes" className="text-white hover:text-gray-300">
           Notes
         </Link>

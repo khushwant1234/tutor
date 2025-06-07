@@ -30,14 +30,8 @@ const CoursesPage = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilter, setActiveFilter] = useState("All");
 
-  const filters = [
-    "All",
-    "Enrolled",
-    "Science",
-    "Math",
-    "Technology",
-    "Languages",
-  ];
+  // Update the filters array to only include All and Enrolled
+  const filters = ["All", "Enrolled"];
 
   useEffect(() => {
     async function fetchUserAndCourses() {

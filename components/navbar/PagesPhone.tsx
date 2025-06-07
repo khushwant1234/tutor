@@ -62,6 +62,15 @@ const PagesPhone = ({ isLoggedIn, isAdmin, userEmail }: PagesPhoneProps) => {
               )}
               {isLoggedIn && (
                 <Link
+                  href="/Calendar"
+                  onClick={toggleMenu}
+                  className="p-2 hover:bg-gray-100 rounded"
+                >
+                  Calendar
+                </Link>
+              )}
+              {isLoggedIn && (
+                <Link
                   href="/Notes"
                   onClick={toggleMenu}
                   className="p-2 hover:bg-gray-100 rounded"

@@ -60,6 +60,7 @@ interface UpcomingClass {
   instructor?: string;
   meeting_link?: string;
   status?: string;
+  start_time?: string;
 }
 
 const Dashboard = () => {
@@ -73,6 +74,29 @@ const Dashboard = () => {
     null
   );
   const [modalOpen, setModalOpen] = useState(false);
+
+  // Format date with ordinal suffix (1st, 2nd, 3rd, etc.)
+  const formatDateWithOrdinal = (date: Date) => {
+    const day = date.getDate();
+    const month = date.toLocaleString("en-US", { month: "long" });
+    const year = date.getFullYear();
+
+    const getOrdinalSuffix = (d: number) => {
+      if (d > 3 && d < 21) return "th";
+      switch (d % 10) {
+        case 1:
+          return "st";
+        case 2:
+          return "nd";
+        case 3:
+          return "rd";
+        default:
+          return "th";
+      }
+    };
+
+    return `${day}${getOrdinalSuffix(day)} ${month}, ${year}`;
+  };
 
   // Simple custom modal
   const SimpleModal = ({
@@ -197,11 +221,10 @@ const Dashboard = () => {
             }
 
             const course = courseData.find((c) => c.id === courseId);
-
             upcoming.push({
               id: cls.id,
               title: cls.title,
-              date: startDate.toLocaleDateString(),
+              date: formatDateWithOrdinal(startDate),
               time: startDate.toLocaleTimeString([], {
                 hour: "2-digit",
                 minute: "2-digit",
@@ -211,6 +234,7 @@ const Dashboard = () => {
               course_title: course?.title || "Unknown Course",
               meeting_link: cls.meeting_link,
               status: cls.status,
+              start_time: cls.start_time,
             });
           });
 
@@ -305,11 +329,10 @@ const Dashboard = () => {
                 const course = (courseData || []).find(
                   (c) => c.id === courseId
                 );
-
                 return {
                   id: cls.id,
                   title: cls.title,
-                  date: startDate.toLocaleDateString(),
+                  date: formatDateWithOrdinal(startDate),
                   time: startDate.toLocaleTimeString([], {
                     hour: "2-digit",
                     minute: "2-digit",
@@ -319,6 +342,7 @@ const Dashboard = () => {
                   course_title: course?.title || "Unknown Course",
                   meeting_link: cls.meeting_link,
                   status: cls.status,
+                  start_time: cls.start_time,
                 };
               });
 
@@ -446,7 +470,6 @@ const Dashboard = () => {
                 </div>
               </CardContent>
             </Card>
-
             <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
@@ -459,19 +482,17 @@ const Dashboard = () => {
                   <BookOpen className="h-10 w-10 text-green-200" />
                 </div>
               </CardContent>
-            </Card>
-
+            </Card>{" "}
             <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-purple-100 text-sm">Next Class</p>
+                    <p className="text-purple-100 text-sm">Next Class</p>{" "}
                     <p className="text-lg font-semibold">
                       {upcomingClasses.length > 0
-                        ? new Date(
-                            upcomingClasses[0].date
-                          ).toLocaleDateString() ===
-                          new Date().toLocaleDateString()
+                        ? formatDateWithOrdinal(
+                            new Date(upcomingClasses[0].start_time || "")
+                          ) === formatDateWithOrdinal(new Date())
                           ? "Today"
                           : upcomingClasses[0].date
                         : "None"}
@@ -487,14 +508,28 @@ const Dashboard = () => {
           {/* Left column - Upcoming classes */}
           <div className="lg:col-span-2">
             <Card className="mb-8">
+              {" "}
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Calendar className="h-5 w-5 mr-2 text-blue-600" />
-                  Upcoming Classes
-                </CardTitle>
-                <CardDescription>
-                  Your scheduled classes for the next 7 days
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center">
+                      <Calendar className="h-5 w-5 mr-2 text-blue-600" />
+                      Upcoming Classes
+                    </CardTitle>
+                    <CardDescription>
+                      Your scheduled classes for the next 7 days
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="text-blue-600 hover:bg-blue-50"
+                    onClick={() => (window.location.href = "/Calendar")}
+                  >
+                    <Calendar className="h-4 w-4 mr-2" />
+                    View My Calendar
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
               </CardHeader>{" "}
               <CardContent>
                 {upcomingClasses.length === 0 ? (
@@ -515,13 +550,19 @@ const Dashboard = () => {
                   </div>
                 ) : (
                   <div className="space-y-3">
+                    {" "}
                     {upcomingClasses.map((cls, index) => {
+                      const today = new Date();
+                      const tomorrow = new Date();
+                      tomorrow.setDate(today.getDate() + 1);
                       const isToday =
-                        new Date(cls.date).toDateString() ===
-                        new Date().toDateString();
+                        formatDateWithOrdinal(
+                          new Date(cls.start_time || "")
+                        ) === formatDateWithOrdinal(today);
                       const isTomorrow =
-                        new Date(cls.date).toDateString() ===
-                        new Date(Date.now() + 86400000).toDateString();
+                        formatDateWithOrdinal(
+                          new Date(cls.start_time || "")
+                        ) === formatDateWithOrdinal(tomorrow);
 
                       return (
                         <div
@@ -632,19 +673,8 @@ const Dashboard = () => {
                       <div className="text-xs text-green-600">
                         Active Courses
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Action button */}
-                  <Button
-                    variant="outline"
-                    className="w-full text-blue-600 hover:bg-blue-50"
-                    onClick={() => (window.location.href = "/MyCourses")}
-                  >
-                    <Calendar className="h-4 w-4 mr-2" />
-                    View All My Courses
-                    <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
+                    </div>{" "}
+                  </div>{" "}
                 </CardFooter>
               )}
             </Card>
