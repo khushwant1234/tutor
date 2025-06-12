@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { NotificationList } from '@/components/NotificationList';
+import { NotificationSender } from '@/components/NotificationSender';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 interface Course {
@@ -9,7 +9,7 @@ interface Course {
   name: string;
 }
 
-export default function CoursePage({ params }: { params: { id: string } }) {
+export default function AdminCoursePage({ params }: { params: { id: string } }) {
   const [course, setCourse] = useState<Course | null>(null);
   const supabase = createClientComponentClient();
 
@@ -31,12 +31,12 @@ export default function CoursePage({ params }: { params: { id: string } }) {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">{course?.name || 'Loading...'}</h1>
-        <NotificationList courseId={params.id} />
+      <div className="mt-6">
+        <NotificationSender 
+          courseId={params.id} 
+          courseName={course?.name || 'Course'} 
+        />
       </div>
-      
-      {/* ... rest of the course content ... */}
     </div>
   );
 } 
