@@ -19,7 +19,7 @@ import supabase from "@/utils/supabase/client";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 const Navbar = () => {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isLoading } = useAuth();
   const router = useRouter();
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -97,16 +97,16 @@ const Navbar = () => {
           onClick={() => router.push("/")}
         >
           EduSite
-        </h1>
-
+        </h1>{" "}
         <Pages
           isLoggedIn={isAuthenticated}
-          isAdmin={isAdmin}
+          isAdmin={isAdmin === null ? undefined : isAdmin}
           userEmail={user?.email}
         />
-
-        <PagesPhone isLoggedIn={isAuthenticated} isAdmin={isAdmin} />
-
+        <PagesPhone
+          isLoggedIn={isAuthenticated}
+          isAdmin={isAdmin === null ? undefined : isAdmin}
+        />
         <div className="flex items-center space-x-2">
           {isAuthenticated ? (
             <>
@@ -141,8 +141,8 @@ const Navbar = () => {
                   <DropdownMenuGroup>
                     <DropdownMenuItem onClick={() => router.push("/Profile")}>
                       Profile
-                    </DropdownMenuItem>
-                    {isAdmin && (
+                    </DropdownMenuItem>{" "}
+                    {isAdmin === true && (
                       <DropdownMenuItem onClick={() => router.push("/Admin")}>
                         Admin Dashboard
                       </DropdownMenuItem>

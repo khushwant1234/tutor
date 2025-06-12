@@ -13,7 +13,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -28,6 +27,8 @@ import {
 } from "@/components/ui/select";
 import { X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import AdminNotesManager from "@/components/admin/AdminNotesManager";
 
 // Add this type definition at the top of your component
 type RecurringClass = {
@@ -1265,14 +1266,14 @@ const AdminPage = () => {
       <Navbar />
       <div className="container mx-auto py-8 px-4">
         <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
-
-        {/* Wrap admin sections in Tabs */}
+        {/* Wrap admin sections in Tabs */}{" "}
         <Tabs defaultValue="courses" className="space-y-4">
           <TabsList>
             <TabsTrigger value="courses">Add New Course</TabsTrigger>
             <TabsTrigger value="admins">Manage Administrators</TabsTrigger>
             <TabsTrigger value="schedule">Schedule Classes</TabsTrigger>
             <TabsTrigger value="classes">Manage Classes</TabsTrigger>
+            <TabsTrigger value="notes">Course Notes</TabsTrigger>
           </TabsList>
 
           {/* Add Course Tab */}
@@ -2454,8 +2455,13 @@ const AdminPage = () => {
                     </div>
                   )}
                 </div>
-              </CardContent>
+              </CardContent>{" "}
             </Card>
+          </TabsContent>
+
+          {/* Course Notes Management Tab */}
+          <TabsContent value="notes">
+            <AdminNotesManager />
           </TabsContent>
         </Tabs>
       </div>

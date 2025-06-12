@@ -5,14 +5,7 @@ import Navbar from "@/components/home/Navbar";
 import CourseCard from "@/components/courses/CourseCard";
 import Footer from "@/components/footer/Footer";
 import supabase from "@/utils/supabase/client";
-import {
-  Loader2,
-  Search,
-  X,
-  FilterIcon,
-  BookOpen,
-  ChevronDown,
-} from "lucide-react";
+import { Search, X, FilterIcon, BookOpen, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Course {
@@ -37,14 +30,8 @@ const CoursesPage = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilter, setActiveFilter] = useState("All");
 
-  const filters = [
-    "All",
-    "Enrolled",
-    "Science",
-    "Math",
-    "Technology",
-    "Languages",
-  ];
+  // Update the filters array to only include All and Enrolled
+  const filters = ["All", "Enrolled"];
 
   useEffect(() => {
     async function fetchUserAndCourses() {
