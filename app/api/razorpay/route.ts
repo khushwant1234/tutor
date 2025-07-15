@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase client for server-side
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Initialize Supabase client for server-side with error handling
+const getSupabaseClient = () => {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  
+  if (!url || !key) {
+    throw new Error('Missing Supabase environment variables');
+  }
+  
+  return createClient(url, key);
+};
 
 // Razorpay key ID and secret
 const KEY_ID = process.env.RAZORPAY_KEY_ID;
@@ -13,6 +19,23 @@ const KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if required environment variables are available
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.error('Missing Supabase environment variables');
+      return NextResponse.json(
+        { error: 'Server configuration error' }, 
+        { status: 500 }
+      );
+    }
+
+    if (!KEY_ID || !KEY_SECRET) {
+      console.error('Missing Razorpay environment variables');
+      return NextResponse.json(
+        { error: 'Payment service not configured' }, 
+        { status: 500 }
+      );
+    }
+
     // Get the authenticated user
     const authHeader = request.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -20,6 +43,7 @@ export async function POST(request: NextRequest) {
     }
     
     const token = authHeader.replace('Bearer ', '');
+    const supabase = getSupabaseClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
     if (authError || !user) {
@@ -56,7 +80,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Check if user is already enrolled
-    const { data: enrollment, error: enrollmentError } = await supabase
+    const { data: enrollment } = await supabase
       .from('user_data')
       .select('*')
       .eq('user_id', user.id)

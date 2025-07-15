@@ -25,7 +25,6 @@ const CoursesPage = () => {
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [user, setUser] = useState<{ id: string } | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilter, setActiveFilter] = useState("All");
@@ -42,7 +41,6 @@ const CoursesPage = () => {
         const {
           data: { user: currentUser },
         } = await supabase.auth.getUser();
-        setUser(currentUser);
 
         // Fetch all courses from the database
         const { data: coursesData, error: coursesError } = await supabase

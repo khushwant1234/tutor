@@ -19,7 +19,7 @@ import supabase from "@/utils/supabase/client";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 const Navbar = () => {
-  const { user, isAdmin, isLoading } = useAuth();
+  const { user, isAdmin } = useAuth();
   const router = useRouter();
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -42,7 +42,6 @@ const Navbar = () => {
     // Listen for auth state changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log("Auth state changed:", event, !!session);
         setIsAuthenticated(!!session);
 
         if (session?.user) {
@@ -101,7 +100,6 @@ const Navbar = () => {
         <Pages
           isLoggedIn={isAuthenticated}
           isAdmin={isAdmin === null ? undefined : isAdmin}
-          userEmail={user?.email}
         />
         <PagesPhone
           isLoggedIn={isAuthenticated}

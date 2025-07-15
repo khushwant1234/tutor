@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
 import React, { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Navbar from "@/components/home/Navbar";
 import Footer from "@/components/footer/Footer";
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle } from "lucide-react";
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import Image from "next/image";
 import CourseSpecificNotes from "@/components/courses/CourseSpecificNotes";
 import CourseScheduledClasses from "@/components/courses/CourseScheduledClasses";
-import { NotificationList } from '@/components/NotificationList';
+import { NotificationList } from "@/components/NotificationList";
 
 interface Course {
   id: string;
@@ -158,7 +158,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
           <div className="flex justify-between items-center mb-6">
             {isEnrolled && <NotificationList courseId={params.id} />}
           </div>
-          
+
           {course.image_url && (
             <div className="relative h-[400px] w-full mb-6 rounded-lg overflow-hidden">
               <Image
@@ -225,13 +225,17 @@ export default function CoursePage({ params }: { params: { id: string } }) {
               </Button>
             )}
           </div>
-          
+
           {/* Course Notes for Enrolled Students */}
           {isEnrolled && user?.id && (
             <>
               {/* Scheduled Classes Section */}
               <div className="mt-12 border-t pt-8">
-                <CourseScheduledClasses courseId={params.id} />
+                <CourseScheduledClasses
+                  courseId={params.id}
+                  userId={user.id}
+                  courseName={course?.title || "Course"}
+                />
               </div>
               <div className="mt-12 border-t pt-8">
                 <CourseSpecificNotes courseId={params.id} userId={user.id} />

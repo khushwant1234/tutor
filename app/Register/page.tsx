@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import supabase from "@/utils/supabase/client";
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
 
 export default function RegisterForm() {
   const router = useRouter();
@@ -23,8 +23,8 @@ export default function RegisterForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [firstName, setFirstName] = useState("");  
-  const [lastName, setLastName] = useState("");    
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -42,16 +42,16 @@ export default function RegisterForm() {
     }
 
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email: email,
         password: password,
         options: {
           data: {
             display_name: `${firstName} ${lastName}`,
             first_name: firstName,
-            last_name: lastName
-          }
-        }
+            last_name: lastName,
+          },
+        },
       });
 
       if (error) {
@@ -65,13 +65,12 @@ export default function RegisterForm() {
       setConfirmPassword("");
       setFirstName("");
       setLastName("");
-      
-      setTimeout(() => {
-        router.push('/CheckMail');
-      }, 2000);
 
+      setTimeout(() => {
+        router.push("/CheckMail");
+      }, 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to register');
+      setError(err instanceof Error ? err.message : "Failed to register");
     } finally {
       setIsLoading(false);
     }
@@ -81,17 +80,18 @@ export default function RegisterForm() {
     try {
       setIsGoogleLoading(true);
       setError("");
-      
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google'
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
       });
 
       if (error) {
         setError(error.message);
       }
-      
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to sign in with Google');
+      setError(
+        err instanceof Error ? err.message : "Failed to sign in with Google"
+      );
     } finally {
       setIsGoogleLoading(false);
     }
@@ -103,13 +103,13 @@ export default function RegisterForm() {
         <form onSubmit={handleSubmit}>
           <CardHeader>
             <CardTitle className="text-2xl">Register</CardTitle>
-            <CardDescription>
-              Create an account to get started.
-            </CardDescription>
+            <CardDescription>Create an account to get started.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
             {error && (
-              <div className="text-red-500 text-sm bg-red-50 p-3 rounded-md">{error}</div>
+              <div className="text-red-500 text-sm bg-red-50 p-3 rounded-md">
+                {error}
+              </div>
             )}
             {success && (
               <div className="text-green-500 text-sm bg-green-50 p-3 rounded-md">
@@ -171,12 +171,16 @@ export default function RegisterForm() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col">
-            <Button 
-              type="submit" 
-              className="w-full" 
+            <Button
+              type="submit"
+              className="w-full"
               disabled={isLoading || success}
             >
-              {isLoading ? "Registering..." : success ? "Account Created!" : "Register"}
+              {isLoading
+                ? "Registering..."
+                : success
+                ? "Account Created!"
+                : "Register"}
             </Button>
             <div className="mt-2 text-center text-sm">
               Already have an account?{" "}

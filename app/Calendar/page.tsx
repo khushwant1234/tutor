@@ -73,14 +73,8 @@ interface ClassInstance {
   course_title?: string;
 }
 
-interface User {
-  id: string;
-  email?: string;
-}
-
 const CalendarPage = () => {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [classes, setClasses] = useState<ClassInstance[]>([]);
@@ -135,8 +129,6 @@ const CalendarPage = () => {
       if (userError || !user) {
         throw new Error("Please log in to view your calendar");
       }
-
-      setUser(user);
 
       // Get user's enrolled courses
       const { data: enrollmentData, error: enrollmentError } = await supabase

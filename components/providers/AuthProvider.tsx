@@ -2,9 +2,10 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import supabase from "@/utils/supabase/client";
+import type { User } from "@/lib/types";
 
 type AuthContextType = {
-  user: any | null;
+  user: User | null;
   isLoading: boolean;
   isAdmin: boolean | null;
   refresh: () => Promise<void>;
@@ -25,7 +26,7 @@ const PROTECTED_ROUTES = ["/Dashboard", "/Profile", "/MyCourses"];
 const ADMIN_ROUTES = ["/Admin"];
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<any | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const router = useRouter();
@@ -71,12 +72,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Check admin status with the same pattern as Admin page
         const adminStatus = await checkUserRole(user.id);
         setIsAdmin(adminStatus);
-        console.log(
-          "Admin check result for user:",
-          user.id,
-          "is admin:",
-          adminStatus
-        );
       } else {
         setUser(null);
         setIsAdmin(null);

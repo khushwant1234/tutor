@@ -1,25 +1,14 @@
 "use client";
 import React from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import supabase from "@/utils/supabase/client";
-import { useRouter } from "next/navigation";
 import { ShieldCheck } from "lucide-react"; // Import ShieldCheck icon
 
 interface PagesProps {
   isLoggedIn: boolean;
   isAdmin?: boolean; // Add isAdmin property
-  userEmail?: string;
 }
 
-const Pages = ({ isLoggedIn, isAdmin, userEmail }: PagesProps) => {
-  const router = useRouter();
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/login");
-  };
-
+const Pages = ({ isLoggedIn, isAdmin }: PagesProps) => {
   return (
     <div className="hidden sm:flex gap-5 items-center">
       <Link href="/" className="text-white hover:text-gray-300">

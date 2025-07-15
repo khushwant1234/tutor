@@ -426,7 +426,7 @@ const Dashboard = () => {
           <div>
             <h1 className="text-3xl font-bold">{getWelcomeMessage()}</h1>
             <p className="text-gray-600 mt-1">
-              Here's what's happening with your courses
+              Here&apos;s what&apos;s happening with your courses
             </p>
           </div>
 
@@ -539,7 +539,8 @@ const Dashboard = () => {
                       No upcoming classes
                     </h3>
                     <p className="text-gray-500 mb-4">
-                      You don't have any classes scheduled for the next 7 days.
+                      You don&apos;t have any classes scheduled for the next 7
+                      days.
                     </p>
                     <Button
                       variant="outline"
@@ -688,14 +689,14 @@ const Dashboard = () => {
                   My Courses
                 </CardTitle>
                 <CardDescription>
-                  Courses you're currently enrolled in
+                  Courses you&apos;re currently enrolled in
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {enrolledCourses.length === 0 ? (
                   <div className="text-center py-6">
                     <p className="text-gray-500">
-                      You haven't enrolled in any courses yet.
+                      You haven&apos;t enrolled in any courses yet.
                     </p>
                     <Button variant="outline" className="mt-4" asChild>
                       <Link href="/Courses">Browse Courses</Link>
@@ -821,7 +822,7 @@ const Dashboard = () => {
           <>
             <h2 className="text-xl font-semibold mb-2">Join Class</h2>
             <p className="text-gray-500 mb-4">
-              You're about to join {selectedClass.title}
+              You&apos;re about to join {selectedClass.title}
             </p>
             <div className="rounded-md bg-blue-50 p-4 mb-6">
               <div className="flex">

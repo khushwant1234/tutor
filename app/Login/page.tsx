@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import supabase from "@/utils/supabase/client";
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -35,7 +35,7 @@ export default function LoginForm() {
         email: email,
         password: password,
       });
-    
+
       if (error) {
         setError(error.message);
         return;
@@ -43,10 +43,10 @@ export default function LoginForm() {
 
       if (data) {
         // Successful login
-        router.push('/Home');
+        router.push("/Home");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to login');
+      setError(err instanceof Error ? err.message : "Failed to login");
     } finally {
       setIsLoading(false);
     }
@@ -56,17 +56,18 @@ export default function LoginForm() {
     try {
       setIsGoogleLoading(true);
       setError("");
-      
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google'
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
       });
 
       if (error) {
         setError(error.message);
       }
-      
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to sign in with Google');
+      setError(
+        err instanceof Error ? err.message : "Failed to sign in with Google"
+      );
     } finally {
       setIsGoogleLoading(false);
     }
@@ -111,11 +112,7 @@ export default function LoginForm() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col">
-            <Button 
-              type="submit" 
-              className="w-full"
-              disabled={isLoading}
-            >
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Signing in..." : "Sign in"}
             </Button>
             <div className="mt-2 text-center text-sm">

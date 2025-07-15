@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/card";
 import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScheduledClass } from "@/lib/types";
 import {
   Select,
   SelectContent,
@@ -27,7 +28,6 @@ import {
 } from "@/components/ui/select";
 import { X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
 import AdminNotesManager from "@/components/admin/AdminNotesManager";
 
 // Add this type definition at the top of your component
@@ -72,8 +72,6 @@ const AdminPage = () => {
 
   const initializeDatabase = async () => {
     try {
-      console.log("Initializing database tables...");
-
       // Create courses table if it doesn't exist
       const { error: coursesError } = await supabase.rpc(
         "create_tables_if_not_exist"
@@ -114,7 +112,7 @@ const AdminPage = () => {
             .select("role")
             .eq("user_id", user.id)
             .maybeSingle(); // Use maybeSingle instead of single
-          console.log("Admin check result:", data);
+
           if (error) {
             console.error("Error checking admin status:", error);
             setIsAdmin(false);
@@ -150,7 +148,7 @@ const AdminPage = () => {
       }
 
       // Add course to courses table
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("courses")
         .insert([
           {
@@ -179,9 +177,9 @@ const AdminPage = () => {
       setInstructor("");
       setPreviewUrl("");
       setOtherInfo("");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error adding course:", err);
-      setError(err.message || "Failed to add course");
+      setError(err instanceof Error ? err.message : "Failed to add course");
     } finally {
       setIsLoading(false);
     }
@@ -255,16 +253,16 @@ const AdminPage = () => {
       // Success
       setAdminSuccess(true);
       setAdminEmail("");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error adding admin:", err);
-      setAdminError(err.message || "Failed to add admin");
+      setAdminError(err instanceof Error ? err.message : "Failed to add admin");
     } finally {
       setAdminLoading(false);
     }
   };
 
   // Update your checkUserIsAdmin function with better logging
-  const checkUserIsAdmin = async (userId: string | any) => {
+  const checkUserIsAdmin = async (userId: string) => {
     console.log(
       `Checking admin status for user ID: "${userId}" (type: ${typeof userId})`
     );
@@ -414,9 +412,11 @@ const AdminPage = () => {
       // Success
       setRevokeSuccess(true);
       setRevokeEmail("");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error revoking admin:", err);
-      setRevokeError(err.message || "Failed to revoke admin");
+      setRevokeError(
+        err instanceof Error ? err.message : "Failed to revoke admin"
+      );
     } finally {
       setRevokeLoading(false);
     }
@@ -733,7 +733,9 @@ const AdminPage = () => {
   const [classSchedulingSuccess, setClassSchedulingSuccess] = useState(false);
 
   // Add these state variables to the AdminPage component
-  const [classesForCourse, setClassesForCourse] = useState<any[]>([]);
+  const [classesForCourse, setClassesForCourse] = useState<ScheduledClass[]>(
+    []
+  );
   const [manageCourseId, setManageCourseId] = useState("");
   const [loadingClasses, setLoadingClasses] = useState(false);
   const [selectedClassId, setSelectedClassId] = useState("");
@@ -880,30 +882,6 @@ const AdminPage = () => {
     }
   };
 
-  // Helper functions
-  const groupTimeSlotsByDay = (slots: { day: number; time: string }[]) => {
-    const groups: Record<number, { day: number; times: string[] }> = {};
-
-    slots.forEach((slot) => {
-      if (!groups[slot.day]) {
-        groups[slot.day] = {
-          day: slot.day,
-          times: [],
-        };
-      }
-
-      groups[slot.day].times.push(slot.time);
-    });
-
-    // Sort each day's times
-    Object.values(groups).forEach((group) => {
-      group.times.sort();
-    });
-
-    // Return as array sorted by day
-    return Object.values(groups).sort((a, b) => a.day - b.day);
-  };
-
   // Loading state while checking admin status
   if (adminCheckLoading) {
     return (
@@ -929,7 +907,7 @@ const AdminPage = () => {
                 Access Denied
               </CardTitle>
               <CardDescription className="text-center">
-                You don't have permission to access this area
+                You don&apos;t have permission to access this area
               </CardDescription>
             </CardHeader>
             <CardContent className="flex justify-center">
@@ -1178,7 +1156,7 @@ const AdminPage = () => {
   };
 
   // Add this function to show a confirmation dialog before deleting a class
-  const confirmDeleteClass = (classInstance: any) => {
+  const confirmDeleteClass = (classInstance: ScheduledClass) => {
     // Create modal for confirmation
     console.log("Deleting class:", classInstance);
     const dialog = document.createElement("div");
@@ -1188,7 +1166,9 @@ const AdminPage = () => {
     const content = document.createElement("div");
     content.className = "bg-white rounded-lg p-6 max-w-md w-full mx-4";
 
-    const startDate = new Date(classInstance.start_time);
+    const startDate = new Date(
+      classInstance.start_time || classInstance.scheduled_time
+    );
     const formattedDate = startDate.toLocaleDateString();
     const formattedTime = startDate.toLocaleTimeString([], {
       hour: "2-digit",
@@ -2067,7 +2047,7 @@ const AdminPage = () => {
                               string,
                               RecurringClass
                             > = classesForCourse.reduce((acc, cls) => {
-                              if (cls.recurring) {
+                              if (cls.recurring && cls.class_id) {
                                 if (!acc[cls.class_id]) {
                                   acc[cls.class_id] = {
                                     id: cls.class_id,
@@ -2178,7 +2158,7 @@ const AdminPage = () => {
                               string,
                               RecurringClass
                             > = classesForCourse.reduce((acc, cls) => {
-                              if (cls.recurring) {
+                              if (cls.recurring && cls.class_id) {
                                 if (!acc[cls.class_id]) {
                                   acc[cls.class_id] = {
                                     id: cls.class_id,
@@ -2315,7 +2295,9 @@ const AdminPage = () => {
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                           {classesForCourse.map((cls) => {
-                            const startDate = new Date(cls.start_time);
+                            const startDate = new Date(
+                              cls.start_time || cls.scheduled_time
+                            );
                             const formattedDate =
                               startDate.toLocaleDateString();
                             const formattedTime = startDate.toLocaleTimeString(
@@ -2477,8 +2459,8 @@ const AdminPage = () => {
               Update All Meeting Links
             </h2>
             <p className="text-gray-500 mb-4">
-              This will update the meeting link for all classes in "
-              {bulkUpdateParentTitle}".
+              This will update the meeting link for all classes in &quot;
+              {bulkUpdateParentTitle}&quot;.
             </p>
 
             <div className="space-y-4">

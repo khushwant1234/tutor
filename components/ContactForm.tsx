@@ -54,7 +54,6 @@ const ContactForm: React.FC<ContactFormProps> = ({ className }) => {
 
     // Submit logic here (e.g., send data to a server)
     setSubmitted(true);
-    console.log("Form submitted", formData);
     setFormData({
       name: "",
       class: "",

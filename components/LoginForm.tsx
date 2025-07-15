@@ -24,7 +24,6 @@ export default function LoginForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Here you would typically send the data to your backend
-    console.log("Form submitted with:", { email, password });
     // Reset form fields after submission
     setEmail("");
     setPassword("");
@@ -71,7 +70,9 @@ export default function LoginForm() {
             type="button"
             variant="outline"
             className="w-full"
-            onClick={() => console.log("Google sign-in clicked")}
+            onClick={() => {
+              /* Handle Google sign-in */
+            }}
           >
             <svg
               className="mr-2 h-4 w-4"

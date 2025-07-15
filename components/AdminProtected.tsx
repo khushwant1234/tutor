@@ -1,43 +1,42 @@
 // components/AdminProtected.tsx
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/utils/AuthContext';
-import { Loader2 } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/components/providers/AuthProvider";
+import { Loader2 } from "lucide-react";
 
-export default function AdminProtected({ children }: { children: React.ReactNode }) {
-  const { user, isAdmin, isLoading, checkAdmin, refreshSession } = useAuth();
+export default function AdminProtected({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { user, isAdmin, isLoading, refresh } = useAuth();
   const [checking, setChecking] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     const checkAuthentication = async () => {
       setChecking(true);
-      
+
       // Force refresh session to ensure we have latest auth state
-      await refreshSession();
-      
+      await refresh();
+
       // If not logged in, redirect to login
       if (!user && !isLoading) {
-        console.log('No user, redirecting to login');
-        router.push('/login');
+        router.push("/login");
         return;
       }
-      
-      // Check admin status
-      const isUserAdmin = await checkAdmin();
-      
-      // If not admin, redirect to home
-      if (!isUserAdmin) {
-        console.log('Not admin, redirecting to home');
-        router.push('/');
+
+      // Check admin status (isAdmin is already computed by AuthProvider)
+      if (user && isAdmin === false) {
+        router.push("/");
         return;
       }
-      
+
       setChecking(false);
     };
 
     checkAuthentication();
-  }, [user, isLoading]);
+  }, [user, isLoading, isAdmin, refresh, router]);
 
   if (isLoading || checking) {
     return (

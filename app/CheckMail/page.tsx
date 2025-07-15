@@ -16,9 +16,11 @@ export default function CheckMail() {
     <div className="min-h-screen flex items-center justify-center">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle className="text-2xl text-center">Check Your Email</CardTitle>
+          <CardTitle className="text-2xl text-center">
+            Check Your Email
+          </CardTitle>
           <CardDescription className="text-center">
-            We've sent you a verification link
+            We&apos;ve sent you a verification link
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
@@ -40,10 +42,12 @@ export default function CheckMail() {
           </div>
           <div className="text-center space-y-4">
             <p className="text-sm text-gray-600">
-              We've sent a verification email to your inbox. Please check your email and click the verification link to activate your account.
+              We&apos;ve sent a verification email to your inbox. Please check
+              your email and click the verification link to activate your
+              account.
             </p>
             <p className="text-xs text-gray-500">
-              Didn't receive the email? Check your spam folder.
+              Didn&apos;t receive the email? Check your spam folder.
             </p>
           </div>
         </CardContent>

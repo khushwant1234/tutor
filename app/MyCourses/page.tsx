@@ -20,7 +20,6 @@ const MyCourses = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [user, setUser] = useState<{ id: string } | null>(null);
 
   useEffect(() => {
     async function fetchPurchasedCourses() {
@@ -34,8 +33,6 @@ const MyCourses = () => {
           setError("Please log in to view your courses");
           return;
         }
-
-        setUser(user);
 
         const { data: userData, error: userDataError } = await supabase
           .from("user_data")

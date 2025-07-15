@@ -9,10 +9,9 @@ import { Menu, X, ShieldCheck } from "lucide-react"; // Import ShieldCheck icon
 interface PagesPhoneProps {
   isLoggedIn: boolean;
   isAdmin?: boolean; // Add isAdmin property
-  userEmail?: string;
 }
 
-const PagesPhone = ({ isLoggedIn, isAdmin, userEmail }: PagesPhoneProps) => {
+const PagesPhone = ({ isLoggedIn, isAdmin }: PagesPhoneProps) => {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
 

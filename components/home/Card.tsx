@@ -1,6 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 
 interface CardProps {
   name: string;
@@ -23,10 +24,12 @@ const Card: React.FC<CardProps> = ({
       >
         {/* Card Image */}
         <div className="relative h-48 overflow-hidden">
-          <img
-            src={image}
+          <Image
+            src={image || "https://placehold.co/600x400"}
             alt={name}
-            className="w-full h-full object-cover transition-all duration-500 hover:scale-105"
+            fill
+            unoptimized={true}
+            className="object-cover transition-all duration-500 hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
         </div>

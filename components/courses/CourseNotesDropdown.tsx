@@ -68,9 +68,6 @@ const CourseNotesDropdown: React.FC<CourseNotesDropdownProps> = ({
         .select("course_id, courses(id, title)")
         .eq("user_id", userId);
 
-      console.log("Enrollments data:", enrollments);
-      console.log("Enrollment error:", enrollmentError);
-
       if (enrollmentError) throw enrollmentError;
 
       const courses =

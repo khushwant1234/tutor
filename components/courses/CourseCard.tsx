@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/hooks/use-toast";
 import { Loader2, CheckCircle2 } from "lucide-react";
 import supabase from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
@@ -30,14 +31,14 @@ const CourseCard: React.FC<CourseCardProps> = ({
   isEnrolled = false,
   price = 0,
   is_free = true,
-  currency = "INR"
+  currency = "INR",
 }) => {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [enrollSuccess, setEnrollSuccess] = useState(false);
   const [localIsEnrolled, setIsEnrolled] = useState(isEnrolled);
-  
+
   // Payment states
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
@@ -48,24 +49,24 @@ const CourseCard: React.FC<CourseCardProps> = ({
       setShowPaymentModal(true);
       return;
     }
-    
+
     // For free courses, use direct enrollment
     try {
       setIsLoading(true);
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
       if (!user) {
-        router.push('/login');
+        router.push("/login");
         return;
       }
 
-      const { error } = await supabase
-        .from("user_data")
-        .insert({
-          user_id: user.id,
-          course_id: id,
-        });
+      const { error } = await supabase.from("user_data").insert({
+        user_id: user.id,
+        course_id: id,
+      });
 
       if (error) throw error;
 
@@ -93,17 +94,19 @@ const CourseCard: React.FC<CourseCardProps> = ({
   return (
     <Card className="h-full flex flex-col overflow-hidden hover:shadow-lg transition-shadow duration-300">
       <div className="relative h-48 overflow-hidden">
-        <img
+        <Image
           src={image_url || "https://placehold.co/600x400"}
           alt={title}
-          className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300"
+          fill
+          unoptimized={true}
+          className="object-cover transform hover:scale-105 transition-transform duration-300"
         />
         {instructor && (
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent text-white p-2 text-sm">
             <span className="font-medium">Instructor: {instructor}</span>
           </div>
         )}
-        
+
         {/* Enrollment badge */}
         {localIsEnrolled && (
           <div className="absolute top-3 right-3 bg-green-500 text-white text-xs px-2 py-1 rounded-full shadow-sm">
@@ -111,11 +114,11 @@ const CourseCard: React.FC<CourseCardProps> = ({
           </div>
         )}
       </div>
-      
+
       <CardContent className="flex-grow p-5">
         <h3 className="text-xl font-semibold mb-2">{title}</h3>
         <p className="text-gray-600 text-sm line-clamp-3 mb-4">{desc}</p>
-        
+
         {/* Price display */}
         <div className="mt-2 mb-3">
           {is_free ? (
@@ -127,18 +130,16 @@ const CourseCard: React.FC<CourseCardProps> = ({
               <span className="text-lg font-bold text-gray-900">
                 {formatPrice(price, currency)}
               </span>
-              <span className="ml-1 text-sm text-gray-500">
-                {currency}
-              </span>
+              <span className="ml-1 text-sm text-gray-500">{currency}</span>
             </div>
           )}
         </div>
       </CardContent>
-      
+
       <CardFooter className="p-5 pt-0 mt-auto">
         {!localIsEnrolled ? (
-          <Button 
-            onClick={handleEnroll} 
+          <Button
+            onClick={handleEnroll}
             disabled={isLoading}
             variant="default"
             className="w-full"
@@ -156,7 +157,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
           </Link>
         )}
       </CardFooter>
-      
+
       {/* Success message */}
       {enrollSuccess && (
         <div className="absolute bottom-4 right-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-md z-10 animate-in fade-in">
@@ -166,26 +167,26 @@ const CourseCard: React.FC<CourseCardProps> = ({
           </div>
         </div>
       )}
-      
+
       {/* Payment success message */}
       {paymentSuccess && (
         <div className="fixed bottom-4 right-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-md z-50 animate-in slide-in-from-right">
           <div className="flex">
             <CheckCircle2 className="h-5 w-5 text-green-500 mr-2" />
             <p className="text-sm font-medium">
-              Payment successful! You're now enrolled in the course.
+              Payment successful! You&apos;re now enrolled in the course.
             </p>
           </div>
         </div>
       )}
-      
+
       {/* Payment Modal */}
       {showPaymentModal && (
         <PaymentModal
           courseId={id}
           courseTitle={title}
           price={price || 0}
-          currency={currency || 'INR'}
+          currency={currency || "INR"}
           onClose={() => setShowPaymentModal(false)}
           onSuccess={() => {
             setPaymentSuccess(true);

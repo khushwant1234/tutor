@@ -4,7 +4,6 @@ import React, { useEffect, useState } from "react";
 import Card from "./Card";
 import { motion } from "framer-motion";
 import supabase from "@/utils/supabase/client";
-import { Loader2 } from "lucide-react";
 
 interface Course {
   id: string;
@@ -37,10 +36,9 @@ const FeaturedCourses = () => {
         if (error) throw error;
 
         setCourses(data || []);
-        console.log(data);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Error fetching featured courses:", err);
-        setError(err.message);
+        setError(err instanceof Error ? err.message : "An error occurred");
       } finally {
         setLoading(false);
       }

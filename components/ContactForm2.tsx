@@ -53,7 +53,6 @@ const ContactForm2: React.FC<ContactFormProps> = ({ className }) => {
     }
 
     setSubmitted(true);
-    console.log("Form submitted", formData);
 
     setFormData({
       name: "",
@@ -305,7 +304,7 @@ const ContactForm2: React.FC<ContactFormProps> = ({ className }) => {
                     d="M5 13l4 4L19 7"
                   />
                 </svg>
-                <p>Form submitted successfully! We'll contact you soon.</p>
+                <p>Form submitted successfully! We&apos;ll contact you soon.</p>
               </div>
             )}
           </form>
